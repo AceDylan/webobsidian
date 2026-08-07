@@ -13,7 +13,7 @@ import chokidar from 'chokidar';
 import { config } from './config.js';
 import { loadSettings, getSettings, setPasswordIfInitial } from './bootstrap.js';
 import { errorHandler } from './middleware/error.js';
-import { COOKIE_NAME } from './middleware/auth.js';
+import { COOKIE_NAME, isTrustedProxyAuth } from './middleware/auth.js';
 import { verifyToken } from './services/auth.js';
 import { authRouter } from './routes/auth.js';
 import { filesRouter } from './routes/files.js';
@@ -166,9 +166,15 @@ function setupWebsocket(server: http.Server) {
       socket.destroy();
       return;
     }
+    const trustedProxyAuthenticated = isTrustedProxyAuth(
+      req.headers['x-webobsidian-proxy-auth'],
+      req.socket.remoteAddress,
+      config.trustedProxySecret,
+      config.trustedProxyAddress,
+    );
     const token = cookieValue(req.headers.cookie, COOKIE_NAME) ?? bearerToken(req.headers.authorization);
     void (async () => {
-      if (!token || !(await verifyToken(token))) {
+      if (!trustedProxyAuthenticated && (!token || !(await verifyToken(token)))) {
         socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
         socket.destroy();
         return;
