@@ -1,7 +1,7 @@
 services:
   webobsidian:
-    build: .
-    image: webobsidian:latest
+    image: dylanha009/webobsidian:latest
+    pull_policy: always
     container_name: webobsidian
     restart: unless-stopped
     # Linux deployment: share the host network so host nginx connects directly
