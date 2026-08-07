@@ -10,6 +10,10 @@ export interface RuntimeConfig {
   /** Roots the folder browser is allowed to traverse. */
   allowedRoots: string[];
   initialPassword?: string;
+  /** Shared secret accepted only from a header overwritten by the trusted proxy. */
+  trustedProxySecret?: string;
+  /** Exact direct socket-peer address allowed to use trusted-proxy authentication. */
+  trustedProxyAddress?: string;
   isProd: boolean;
   /**
    * Express `trust proxy` setting. Controls whether `X-Forwarded-*` headers are
@@ -61,6 +65,8 @@ export const config: RuntimeConfig = {
   defaultVaultPath: path.resolve(process.env.VAULT_PATH ?? './sample-vault'),
   allowedRoots: resolveRoots(),
   initialPassword: process.env.WEBOBSIDIAN_PASSWORD || undefined,
+  trustedProxySecret: process.env.WEBOBSIDIAN_TRUSTED_PROXY_SECRET || undefined,
+  trustedProxyAddress: process.env.WEBOBSIDIAN_TRUSTED_PROXY_ADDRESS?.trim() || undefined,
   isProd: process.env.NODE_ENV === 'production',
   trustProxy: resolveTrustProxy(),
 };
