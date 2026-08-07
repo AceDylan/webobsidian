@@ -24,7 +24,13 @@ WebObsidian là web app self-hosted clone toàn diện Obsidian. Thiết kế ch
 - Ngôn ngữ: TypeScript cho cả server và web. Tránh `any` khi có thể.
 - Cấu hình runtime: chỉ dùng file JSON (`data/settings.json`) — không thêm DB engine.
 - Bảo mật: không log secret/token/API key; hash trước khi lưu; guard path traversal.
-- Commit/push git **chỉ khi người dùng yêu cầu**.
+- Sau khi thay đổi đã được kiểm chứng đầy đủ, **tự động commit và push lên `origin/main`**;
+  không yêu cầu người dùng xác nhận hoặc cấp quyền thêm cho bước commit/push.
+- **Không build Docker image trên máy chủ local.** Quy trình triển khai bắt buộc là:
+  sửa và kiểm chứng source local → tự động commit/push lên `origin/main` →
+  chờ GitHub Actions build/push `dylanha009/webobsidian:latest` → máy chủ pull image mới và
+  recreate container → kiểm tra health/auth/chức năng. Không dùng `docker compose build`,
+  `docker build`, hoặc image build thủ công trên máy chủ để triển khai thay đổi source.
 
 ## Lệnh hữu ích
 ```bash

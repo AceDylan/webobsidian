@@ -38,6 +38,20 @@ npm run typecheck    # must pass — CI runs this
 npm run build        # must succeed — CI runs this
 ```
 
+## Deployment rule
+
+Do **not** build deployment Docker images on the local server. The required release path is:
+
+1. Make and verify source changes locally.
+2. After verification passes, commit and push to `origin/main` automatically; do not request
+   additional user authorization for commit or push.
+3. Let GitHub Actions build and publish `dylanha009/webobsidian:latest` and `:custom`.
+4. After the workflow succeeds, pull the new image on the server and recreate the container.
+5. Verify container health, authentication, reverse proxy, and the changed functionality.
+
+Do not use `docker build`, `docker compose build`, or any manual local image build as a
+deployment shortcut.
+
 ## Pull requests
 
 1. Fork and create a topic branch off `main`.
