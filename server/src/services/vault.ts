@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { createHash, randomBytes } from 'node:crypto';
 import { getSettings } from './settings.js';
 
 export interface TreeNode {
@@ -96,7 +97,146 @@ export function toRel(root: string, abs: string): string {
 
 export async function ensureVault(): Promise<void> {
   const root = await getVaultRoot();
-  await fs.mkdir(root, { recursive: true });
+  await ensureDirectoryTree(root, root);
+}
+
+interface OwnershipPolicy {
+  uid: number;
+  gid: number;
+  mode: number;
+}
+
+const textWriteLocks = new Map<string, Promise<void>>();
+
+function metadataFromStat(stat: import('node:fs').BigIntStats): OwnershipPolicy {
+  return {
+    uid: Number(stat.uid),
+    gid: Number(stat.gid),
+    mode: Number(stat.mode & 0o7777n),
+  };
+}
+
+function defaultDirectoryPolicy(): OwnershipPolicy {
+  return {
+    uid: typeof process.getuid === 'function' ? process.getuid() : 0,
+    gid: typeof process.getgid === 'function' ? process.getgid() : 0,
+    mode: 0o755,
+  };
+}
+
+function directoryModeFromAncestor(mode: number): number {
+  // Keep ordinary permissions and setgid (important for group-shared vaults),
+  // but do not copy file-only setuid or sticky semantics to every descendant.
+  return mode & 0o2777;
+}
+
+function fileModeFromDirectory(mode: number): number {
+  // Directory execute bits are traversal permissions, not a reason to make a
+  // newly uploaded note or attachment executable.
+  return mode & 0o666;
+}
+
+async function applyMetadata(target: string, policy: OwnershipPolicy, mode: number): Promise<void> {
+  const current = await fs.stat(target, { bigint: true });
+  if (Number(current.uid) !== policy.uid || Number(current.gid) !== policy.gid) {
+    await fs.chown(target, policy.uid, policy.gid);
+  }
+  // chown may clear special bits, so mode is always applied last.
+  await fs.chmod(target, mode);
+}
+
+/**
+ * Create each missing directory separately and inherit uid/gid/mode from the
+ * nearest directory that already exists inside the vault.
+ */
+async function ensureDirectoryTree(absDir: string, rootOverride?: string): Promise<OwnershipPolicy> {
+  const root = path.resolve(rootOverride ?? (await getVaultRoot()));
+  const target = path.resolve(absDir);
+  if (target !== root && !target.startsWith(root + path.sep)) {
+    throw Object.assign(new Error('Path escapes vault'), { status: 400 });
+  }
+
+  const missing: string[] = [];
+  let probe = target;
+  let policy: OwnershipPolicy | null = null;
+  for (;;) {
+    try {
+      const stat = await fs.stat(probe, { bigint: true });
+      if (!stat.isDirectory()) throw Object.assign(new Error('Path is not a directory'), { code: 'ENOTDIR' });
+      policy = metadataFromStat(stat);
+      break;
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') throw error;
+      missing.unshift(probe);
+      if (probe === root) {
+        policy = defaultDirectoryPolicy();
+        break;
+      }
+      probe = path.dirname(probe);
+    }
+  }
+
+  for (const dir of missing) {
+    const desiredMode = directoryModeFromAncestor(policy.mode);
+    let created = false;
+    try {
+      await fs.mkdir(dir, { mode: desiredMode });
+      created = true;
+    } catch (error: any) {
+      if (error?.code !== 'EEXIST') throw error;
+    }
+    if (created) await applyMetadata(dir, policy, desiredMode);
+    const stat = await fs.stat(dir, { bigint: true });
+    if (!stat.isDirectory()) throw Object.assign(new Error('Path is not a directory'), { code: 'ENOTDIR' });
+    policy = metadataFromStat(stat);
+  }
+  return policy;
+}
+
+async function statOrNull(abs: string): Promise<import('node:fs').BigIntStats | null> {
+  try {
+    return await fs.stat(abs, { bigint: true });
+  } catch (error: any) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+function versionFromStat(stat: import('node:fs').BigIntStats): string {
+  const metadata = [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs]
+    .map((value) => value.toString())
+    .join(':');
+  return createHash('sha256').update(metadata).digest('base64url');
+}
+
+function conflictError(): Error & { status: number; code: string } {
+  return Object.assign(new Error('File changed since it was opened'), {
+    status: 409,
+    code: 'VERSION_CONFLICT',
+  });
+}
+
+async function assertExpectedVersion(abs: string, expectedVersion?: string): Promise<void> {
+  if (expectedVersion === undefined) return;
+  const current = await statOrNull(abs);
+  if (!current || !current.isFile() || versionFromStat(current) !== expectedVersion) throw conflictError();
+}
+
+async function withTextWriteLock<T>(abs: string, action: () => Promise<T>): Promise<T> {
+  const previous = textWriteLocks.get(abs) ?? Promise.resolve();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const queued = previous.catch(() => {}).then(() => gate);
+  textWriteLocks.set(abs, queued);
+  await previous.catch(() => {});
+  try {
+    return await action();
+  } finally {
+    release();
+    if (textWriteLocks.get(abs) === queued) textWriteLocks.delete(abs);
+  }
 }
 
 /** Build the full tree (folders + files), skipping ignored dirs. */
@@ -145,28 +285,111 @@ export async function readFileText(rel: string): Promise<string> {
   return fs.readFile(abs, 'utf8');
 }
 
+export interface VersionedText {
+  content: string;
+  version: string;
+}
+
+/** Read content and metadata from the same open inode so the token matches the bytes. */
+export async function readFileTextVersioned(rel: string): Promise<VersionedText> {
+  const abs = await resolveInVault(rel);
+  const handle = await fs.open(abs, 'r');
+  try {
+    const stat = await handle.stat({ bigint: true });
+    const content = await handle.readFile({ encoding: 'utf8' });
+    return { content, version: versionFromStat(stat) };
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function readFileBuffer(rel: string): Promise<Buffer> {
   const abs = await resolveInVault(rel);
   return fs.readFile(abs);
 }
 
-export async function writeFileText(rel: string, content: string): Promise<void> {
+export async function fileVersion(rel: string): Promise<string> {
   const abs = await resolveInVault(rel);
-  await fs.mkdir(path.dirname(abs), { recursive: true });
-  const tmp = `${abs}.tmp-${Date.now()}`;
-  await fs.writeFile(tmp, content, 'utf8');
-  await fs.rename(tmp, abs);
+  return versionFromStat(await fs.stat(abs, { bigint: true }));
+}
+
+export async function writeFileText(
+  rel: string,
+  content: string,
+  expectedVersion?: string,
+): Promise<{ version: string }> {
+  const abs = await resolveInVault(rel);
+  return withTextWriteLock(abs, async () => {
+    await assertExpectedVersion(abs, expectedVersion);
+    const parentMetadata = await ensureDirectoryTree(path.dirname(abs));
+    const tmp = `${abs}.tmp-${randomBytes(8).toString('hex')}`;
+    let tempOwned = false;
+    let renamed = false;
+    try {
+      const handle = await fs.open(tmp, 'wx');
+      tempOwned = true;
+      try {
+        await handle.writeFile(content, { encoding: 'utf8' });
+      } finally {
+        await handle.close();
+      }
+
+      // Check again immediately before replacement. The in-process lock closes
+      // races between web/agent requests; this second check also catches an
+      // external editor changing the file while the temp file was prepared.
+      const current = await statOrNull(abs);
+      if (expectedVersion !== undefined && (!current || versionFromStat(current) !== expectedVersion)) {
+        throw conflictError();
+      }
+      if (current && !current.isFile()) {
+        throw Object.assign(new Error('Path is not a file'), { code: 'EISDIR' });
+      }
+
+      const metadata = current ? metadataFromStat(current) : parentMetadata;
+      const mode = current ? Number(current.mode & 0o7777n) : fileModeFromDirectory(metadata.mode);
+      await applyMetadata(tmp, metadata, mode);
+      await fs.rename(tmp, abs);
+      renamed = true;
+      return { version: versionFromStat(await fs.stat(abs, { bigint: true })) };
+    } finally {
+      if (tempOwned && !renamed) await fs.rm(tmp, { force: true }).catch(() => {});
+    }
+  });
 }
 
 export async function writeFileBuffer(rel: string, buf: Buffer): Promise<void> {
   const abs = await resolveInVault(rel);
-  await fs.mkdir(path.dirname(abs), { recursive: true });
-  await fs.writeFile(abs, buf);
+  const parentMetadata = await ensureDirectoryTree(path.dirname(abs));
+  const existing = await statOrNull(abs);
+  if (existing && !existing.isFile()) {
+    throw Object.assign(new Error('Path is not a file'), { code: 'EISDIR' });
+  }
+  if (existing) {
+    // Truncating an existing inode preserves its ownership and permissions.
+    await fs.writeFile(abs, buf);
+    return;
+  }
+
+  let created = false;
+  try {
+    await fs.writeFile(abs, buf, { flag: 'wx' });
+    created = true;
+    await applyMetadata(abs, parentMetadata, fileModeFromDirectory(parentMetadata.mode));
+  } catch (error: any) {
+    if (!created && error?.code === 'EEXIST') {
+      // Another writer created it after our stat; treat it as an intentional
+      // overwrite and preserve that inode's metadata.
+      await fs.writeFile(abs, buf);
+      return;
+    }
+    if (created) await fs.rm(abs, { force: true }).catch(() => {});
+    throw error;
+  }
 }
 
 export async function createFolder(rel: string): Promise<void> {
   const abs = await resolveInVault(rel);
-  await fs.mkdir(abs, { recursive: true });
+  await ensureDirectoryTree(abs);
 }
 
 /**

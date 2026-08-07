@@ -48,14 +48,29 @@ filesRouter.get(
     // `![[image.jpg]]` that lives in Attachments/), resolve it by basename.
     if (!(await vault.exists(rel))) {
       const resolved = resolveFile(rel);
-      if (resolved) rel = resolved;
+      if (!resolved || !(await vault.exists(resolved))) {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+      rel = resolved;
     }
-    if (vault.isTextFile(rel)) {
-      res.json({ path: rel, content: await vault.readFileText(rel), encoding: 'utf8' });
-    } else {
-      // Stream with Range support so embedded <video>/<audio> can seek.
-      const abs = await vault.resolveInVault(rel);
-      await sendFileWithRange(req, res, abs, mimeFor(rel));
+    try {
+      if (vault.isTextFile(rel)) {
+        const { content, version } = await vault.readFileTextVersioned(rel);
+        res.setHeader('ETag', `"${version}"`);
+        res.json({ path: rel, content, encoding: 'utf8', version });
+      } else {
+        // Stream with Range support so embedded <video>/<audio> can seek.
+        const abs = await vault.resolveInVault(rel);
+        res.setHeader('ETag', `"${await vault.fileVersion(rel)}"`);
+        await sendFileWithRange(req, res, abs, mimeFor(rel));
+      }
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
+      throw error;
     }
   }),
 );
@@ -63,14 +78,18 @@ filesRouter.get(
 filesRouter.put(
   '/content',
   asyncHandler(async (req, res) => {
-    const { path: rel, content } = req.body ?? {};
+    const { path: rel, content, expectedVersion } = req.body ?? {};
     if (typeof rel !== 'string' || typeof content !== 'string') {
       res.status(400).json({ error: 'path and content required' });
       return;
     }
-    await vault.writeFileText(rel, content);
+    if (expectedVersion !== undefined && typeof expectedVersion !== 'string') {
+      res.status(400).json({ error: 'expectedVersion must be a string' });
+      return;
+    }
+    const { version } = await vault.writeFileText(rel, content, expectedVersion);
     reindex({ upsert: rel, added: rel });
-    res.json({ ok: true, path: rel });
+    res.json({ ok: true, path: rel, version });
   }),
 );
 

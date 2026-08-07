@@ -56,6 +56,13 @@ export interface GitCommit {
   author: string;
 }
 
+export interface FileContent {
+  path: string;
+  content: string;
+  encoding: 'utf8';
+  version: string;
+}
+
 async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const { headers: optHeaders, ...rest } = opts;
   const res = await fetch(url, {
@@ -108,9 +115,12 @@ export const api = {
   // files
   tree: () => req<TreeNode>('/api/files/'),
   read: (path: string) =>
-    req<{ path: string; content: string }>(`/api/files/content?path=${encodeURIComponent(path)}`),
-  write: (path: string, content: string) =>
-    req<{ ok: true }>('/api/files/content', { method: 'PUT', body: JSON.stringify({ path, content }) }),
+    req<FileContent>(`/api/files/content?path=${encodeURIComponent(path)}`),
+  write: (path: string, content: string, expectedVersion?: string) =>
+    req<{ ok: true; path: string; version: string }>('/api/files/content', {
+      method: 'PUT',
+      body: JSON.stringify({ path, content, ...(expectedVersion === undefined ? {} : { expectedVersion }) }),
+    }),
   createFolder: (path: string) =>
     req<{ ok: true }>('/api/files/folder', { method: 'POST', body: JSON.stringify({ path }) }),
   rename: (from: string, to: string) =>

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { api, type TreeNode, type ShareRecord } from './api';
+import { api, ApiError, type TreeNode, type ShareRecord } from './api';
 import { findNode } from './tree';
 
 /** Per-tab id so we can ignore the echo of our own server-pushed state change. */
@@ -97,6 +97,8 @@ interface AppState {
   goBack: () => void;
   goForward: () => void;
   content: string;
+  /** Version of activePath that `content` was opened from. */
+  contentVersion: string | null;
   dirty: boolean;
   viewMode: ViewMode;
   setViewMode: (m: ViewMode) => void;
@@ -339,6 +341,7 @@ export const useStore = create<AppState>()(
           });
       },
       content: '',
+      contentVersion: null,
       dirty: false,
       viewMode: 'live',
       setViewMode: (m) => set({ viewMode: m }),
@@ -414,13 +417,17 @@ export const useStore = create<AppState>()(
         else get().closeTab(GRAPH_PATH);
       },
       openGraph: async () => {
-        if (get().dirty) await get().save();
+        if (get().dirty) {
+          await get().save();
+          if (get().dirty) return;
+        }
         set((s) => ({
           tabs: s.tabs.some((t) => t.path === GRAPH_PATH)
             ? s.tabs
             : [...s.tabs, { path: GRAPH_PATH, title: 'Graph view' }],
           activePath: GRAPH_PATH,
           content: '',
+          contentVersion: null,
           dirty: false,
           ...pushHistory(s, GRAPH_PATH),
         }));
@@ -478,20 +485,25 @@ export const useStore = create<AppState>()(
 
       openFile: async (path) => {
         if (path === GRAPH_PATH) return get().openGraph();
-        if (get().dirty) await get().save();
+        if (get().dirty) {
+          await get().save();
+          if (get().dirty) return;
+        }
         // A folder path (e.g. deep-link /note/<folder>) opens a folder content
         // view — never read it as a note nor pollute Recent with it.
         const isFolder = findNode(get().tree, path)?.type === 'folder';
         let content = '';
+        let contentVersion: string | null = null;
         if (!isFolder && TEXT_RE.test(path)) {
           const r = await api.read(path);
           content = typeof r === 'string' ? r : r.content;
+          contentVersion = typeof r === 'string' ? null : r.version;
         }
         const title = path.split('/').pop() ?? path;
         set((s) => {
           const tabs = s.tabs.find((t) => t.path === path) ? s.tabs : [...s.tabs, { path, title }];
           const recent = isFolder ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
-          return { tabs, activePath: path, content, dirty: false, recent, ...pushHistory(s, path) };
+          return { tabs, activePath: path, content, contentVersion, dirty: false, recent, ...pushHistory(s, path) };
         });
       },
 
@@ -516,17 +528,32 @@ export const useStore = create<AppState>()(
           const tabs = s.tabs.filter((t) => t.path !== path);
           const wasActive = s.activePath === path;
           const activePath = wasActive ? (tabs.at(-1)?.path ?? null) : s.activePath;
-          return { tabs, activePath, ...(wasActive ? { content: '', dirty: false } : {}) };
+          return { tabs, activePath, ...(wasActive ? { content: '', contentVersion: null, dirty: false } : {}) };
         }),
 
       setContent: (c) => set({ content: c, dirty: true }),
 
       save: async () => {
-        const { activePath, content, dirty } = get();
+        const { activePath, content, contentVersion, dirty } = get();
         if (!activePath || !dirty) return;
         if (!TEXT_RE.test(activePath)) return;
-        await api.write(activePath, content);
-        set({ dirty: false });
+        try {
+          const saved = await api.write(activePath, content, contentVersion ?? undefined);
+          set((state) => {
+            if (state.activePath !== activePath) return {};
+            return {
+              contentVersion: saved.version,
+              dirty: state.content !== content,
+              ...(state.toast.toLowerCase().includes('save conflict') ? { toast: '' } : {}),
+            };
+          });
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 409) {
+            get().notify('Save conflict: the file changed elsewhere. Your unsaved content was kept.', 0);
+            return;
+          }
+          get().notify(error instanceof Error ? `Save failed: ${error.message}` : 'Save failed', 0);
+        }
       },
 
       createNote: async (path, body) => {
@@ -609,12 +636,17 @@ export const useStore = create<AppState>()(
         if (activePath && TEXT_RE.test(activePath)) {
           try {
             const r = await api.read(activePath);
-            set({ content: typeof r === 'string' ? r : r.content, dirty: false });
+            set({
+              content: typeof r === 'string' ? r : r.content,
+              contentVersion: typeof r === 'string' ? null : r.version,
+              dirty: false,
+            });
           } catch {
             set({
               tabs: tabs.filter((t) => t.path !== activePath),
               activePath: tabs.filter((t) => t.path !== activePath).at(-1)?.path ?? null,
               content: '',
+              contentVersion: null,
             });
           }
         }
@@ -646,7 +678,10 @@ export const useStore = create<AppState>()(
         if (originId === CLIENT_ID) return; // ignore echo of our own change
         const prevActive = get().activePath;
         const prevSplit = get().splitPath;
-        if (get().dirty) await get().save(); // don't lose local edits when switching
+        if (get().dirty) {
+          await get().save(); // don't lose local edits when switching
+          if (get().dirty) return;
+        }
         suppressSave = true;
         applyPersisted(state, set);
         lastSaved = JSON.stringify(pickPersisted(get()));
