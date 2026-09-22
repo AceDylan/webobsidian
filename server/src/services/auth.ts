@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import jwt from 'jsonwebtoken';
 import { getSettings, updateSettings } from './settings.js';
 import { config } from '../config.js';
+import { HUB_SESSION_AMR, hubKeyFingerprint, hubOrigin, hubSessionStillValid } from './hubsso.js';
 
 const scryptAsync = promisify(scrypt);
 const KEYLEN = 64;
@@ -99,19 +100,57 @@ export async function issueToken(): Promise<string> {
 }
 
 /**
+ * Owner session opened by a Bookmark Hub ticket (services/hubsso.ts). Same cookie
+ * and secret as a password sign-in, but it carries `amr: 'hub'`, the Hub it came
+ * from and a fingerprint of the bridge key, and it lives `ttlSeconds` (12h by
+ * default) instead of 30 days.
+ */
+export async function issueHubToken(ttlSeconds: number): Promise<string> {
+  const s = await getSettings();
+  return jwt.sign(
+    { sub: 'owner', amr: HUB_SESSION_AMR, hub: hubOrigin(), hk: hubKeyFingerprint() },
+    s.auth.jwtSecret,
+    { expiresIn: ttlSeconds, algorithm: 'HS256' },
+  );
+}
+
+async function ownerPayload(token: string): Promise<jwt.JwtPayload | undefined> {
+  try {
+    const s = await getSettings();
+    const payload = jwt.verify(token, s.auth.jwtSecret, { algorithms: ['HS256'] });
+    if (typeof payload !== 'object' || payload === null || payload.sub !== 'owner') return undefined;
+    // A Hub session is only as good as the bridge that opened it: switching the
+    // bridge off, re-pointing it or rotating its secret revokes it immediately.
+    if (payload.amr === HUB_SESSION_AMR && !hubSessionStillValid(payload)) return undefined;
+    return payload;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Xác minh token phiên CHỦ SỞ HỮU. Ngoài chữ ký hợp lệ, token bắt buộc phải có
  * `sub === 'owner'` và dùng đúng thuật toán HS256. Điều này ngăn các token khác
  * cũng ký bằng cùng `jwtSecret` (ví dụ unlock-cookie của share công khai, mang
  * `sub: 'share'`) bị tái sử dụng như một phiên owner đầy đủ.
  */
 export async function verifyToken(token: string): Promise<boolean> {
-  try {
-    const s = await getSettings();
-    const payload = jwt.verify(token, s.auth.jwtSecret, { algorithms: ['HS256'] });
-    return typeof payload === 'object' && payload !== null && payload.sub === 'owner';
-  } catch {
-    return false;
-  }
+  return Boolean(await ownerPayload(token));
+}
+
+/** A valid owner session that was opened through the Bookmark Hub (not by password). */
+export async function verifyHubSessionToken(token: string): Promise<boolean> {
+  return (await ownerPayload(token))?.amr === HUB_SESSION_AMR;
+}
+
+/**
+ * Does this cookie claim to be a Hub session? Signature and expiry are NOT checked:
+ * only used to decide whether a Hub sign-out should clear it (it must not end a
+ * password session that happens to share the cookie).
+ */
+export function looksLikeHubToken(token: string): boolean {
+  const payload = jwt.decode(token);
+  return typeof payload === 'object' && payload !== null && payload.amr === HUB_SESSION_AMR;
 }
 
 /** ---- API keys ----------------------------------------------------------- */

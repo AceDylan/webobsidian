@@ -1,7 +1,15 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.5 · Cập nhật: 2026-06-22 · Trạng thái: Draft
+> Phiên bản: 1.6 · Cập nhật: 2026-09-22 · Trạng thái: Draft
+> Changelog 1.6 (FR-3 — nhúng vào Bookmark Hub + đăng nhập một lần, theo yêu cầu người dùng): cho phép
+> **đúng một** origin Bookmark Hub (`WEBOBSIDIAN_HUB_URL`) nhúng app bằng iframe (`frame-ancestors <hub>`,
+> mặc định vẫn `'none'`). Hub đã mở khoá thì vault không hỏi đăng nhập lần hai: trang riêng của Hub
+> (`/vault/open`) POST một **ticket HMAC dùng một lần, 60 giây** (không bao giờ nằm trong URL) tới
+> `POST /auth/hub/sso`; server kiểm Origin = Hub, chữ ký (`WEBOBSIDIAN_HUB_EMBED_SECRET`), mục đích, hạn,
+> issuer/audience, nonce rồi cấp cookie phiên owner `amr: 'hub'` ngắn hơn (mặc định 12 giờ). Tắt cầu nối,
+> đổi Hub hoặc xoay secret ⇒ mọi phiên kiểu này mất hiệu lực ngay. Khoá Hub ⇒ `POST /auth/hub/logout`.
+> `GET /auth/hub/check` cho reverse proxy (`auth_request`) chỉ chấp nhận phiên Hub. Chi tiết: `docs/HUB_EMBED.md`.
 > Changelog 1.5 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bổ sung **FR-13** —
 > đóng gói WebObsidian thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
 > là **Electron shell** spawn đúng server Express hiện có như tiến trình con (qua `ELECTRON_RUN_AS_NODE`,
@@ -228,6 +236,13 @@ webobsidian/
   chấp nhận pass override **bất kể** người dùng đã đổi pass hay chưa. Mặc định không có override.
 - Đăng nhập 1 password → JWT trong httpOnly cookie.
 - Mọi route web & file API yêu cầu auth (trừ `/login`, healthcheck).
+- **Nhúng vào Bookmark Hub + SSO (tuỳ chọn, 1.6):** `WEBOBSIDIAN_HUB_URL` = origin duy nhất được nhúng
+  app; `WEBOBSIDIAN_HUB_EMBED_SECRET` (≥ 32 ký tự, cùng giá trị với `HUB_VAULT_EMBED_SECRET` bên Hub) bật
+  đăng nhập qua Hub: ticket `v2.vault.<exp>.<nonce>.<issuer>.<audience>.<HMAC-SHA256>` (key
+  `sha256("hub-vault-admin|"+secret)`), chỉ đi trong body của form POST từ trang của Hub, dùng 1 lần.
+  Phiên cấp ra là cookie owner thường nhưng mang `amr:'hub'`, origin Hub và fingerprint của key; sống
+  `WEBOBSIDIAN_HUB_SESSION_TTL` giây (mặc định 43200). Trong iframe, hết phiên ⇒ SPA tự quay lại qua Hub
+  (tối đa 1 lần/phút). Không bao giờ dùng header trusted-proxy cho các route `/auth/hub/*`.
 
 ### FR-4 · GitHub sync
 - Cấu hình: repo URL, branch, token (PAT) hoặc deploy key, tên/email commit.
@@ -418,7 +433,7 @@ Express + SPA hiện có (không fork code, không đổi kiến trúc) — nên
   không thể bypass bằng cách xoay vòng XFF, **bất kể cấu hình `trust proxy`**; vì vậy `trust proxy` để
   mặc định bật (`true`, qua `TRUST_PROXY`) cho `X-Forwarded-Proto`/Secure-cookie hoạt động sau proxy). Bắt buộc đổi mật khẩu mặc định (`123456`) ngay sau lần đăng nhập đầu
   (`mustChangePassword`). Security headers qua `helmet` + CSP (script-src 'self'+nonce; không ép HTTPS
-  để giữ self-host HTTP). Token git/PAT được redact khỏi mọi thông báo lỗi trả client + log. WebSocket
+  để giữ self-host HTTP; `frame-ancestors 'none'`, hoặc đúng origin Bookmark Hub khi cấu hình FR-3 1.6). Token git/PAT được redact khỏi mọi thông báo lỗi trả client + log. WebSocket
   `/ws` yêu cầu phiên đăng nhập hợp lệ. Plugin `id` được validate trước khi thành path segment; đổi
   `vault.path` qua API bị giới hạn trong `allowedRoots`.
 - **Hiệu năng**: search < 100ms cho vault ~10k notes; lazy load file tree lớn.
@@ -436,7 +451,11 @@ POST   /auth/setup            # (legacy) set password lần đầu — vô hiệ
 POST   /auth/login            # login → cookie
 POST   /auth/logout
 POST   /auth/change-password  # đổi pass: { currentPassword, newPassword } (yêu cầu auth)
-GET    /auth/me
+GET    /auth/me               # + hub: true khi phiên được mở qua Bookmark Hub
+GET    /auth/status           # + hub: { url, sso } | null
+POST   /auth/hub/sso          # form POST từ trang của Hub: ticket → cookie phiên → 303 tới `to` (path nội bộ)
+GET    /auth/hub/check        # 204 nếu cookie là phiên Hub hợp lệ, ngược lại 401 (cho nginx auth_request)
+POST   /auth/hub/logout       # Hub bị khoá: kết thúc phiên Hub trong trình duyệt này (Origin phải là Hub)
 GET    /api/files            # cây thư mục
 GET    /api/files/*path      # đọc file (md/binary)
 PUT    /api/files/*path      # ghi

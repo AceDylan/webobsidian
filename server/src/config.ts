@@ -14,6 +14,15 @@ export interface RuntimeConfig {
   trustedProxySecret?: string;
   /** Exact direct socket-peer address allowed to use trusted-proxy authentication. */
   trustedProxyAddress?: string;
+  /**
+   * Bookmark Hub embed (see services/hubsso.ts). `hubUrl` is the Hub's origin: the
+   * only foreign page allowed to frame this app. `hubEmbedSecret` (>= 32 chars,
+   * the same value as the Hub's HUB_VAULT_EMBED_SECRET) turns on sign-in through
+   * the Hub. `hubSessionTtlSeconds` is the lifetime of a session opened that way.
+   */
+  hubUrl?: string;
+  hubEmbedSecret?: string;
+  hubSessionTtlSeconds?: number;
   isProd: boolean;
   /**
    * Express `trust proxy` setting. Controls whether `X-Forwarded-*` headers are
@@ -67,6 +76,9 @@ export const config: RuntimeConfig = {
   initialPassword: process.env.WEBOBSIDIAN_PASSWORD || undefined,
   trustedProxySecret: process.env.WEBOBSIDIAN_TRUSTED_PROXY_SECRET || undefined,
   trustedProxyAddress: process.env.WEBOBSIDIAN_TRUSTED_PROXY_ADDRESS?.trim() || undefined,
+  hubUrl: process.env.WEBOBSIDIAN_HUB_URL?.trim() || undefined,
+  hubEmbedSecret: process.env.WEBOBSIDIAN_HUB_EMBED_SECRET?.trim() || undefined,
+  hubSessionTtlSeconds: Number(process.env.WEBOBSIDIAN_HUB_SESSION_TTL) || undefined,
   isProd: process.env.NODE_ENV === 'production',
   trustProxy: resolveTrustProxy(),
 };

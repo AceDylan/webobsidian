@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
+import { isFramed, isHubSession } from '../lib/hub';
 import Icon from './Icon';
 
 type Section = 'vault' | 'git' | 'api' | 'sharing' | 'plugins' | 'appearance' | 'account' | 'about';
@@ -481,6 +482,9 @@ function AccountSettings({ s, reload }: { s: any; reload: () => void }) {
 
 function About() {
   const logout = async () => { await api.logout(); location.reload(); };
+  // Inside the Bookmark Hub's frame the Hub's lock is the sign-out: logging out here
+  // alone would only have the Hub sign this frame straight back in.
+  const viaHub = isHubSession() && isFramed();
   return (
     <div>
       <h2>About WebObsidian</h2>
@@ -488,7 +492,13 @@ function About() {
         A self-hosted, Obsidian-compatible web app. Vault, QMD search, GitHub sync (with LFS),
         agent API and community plugins.
       </p>
-      <button className="btn danger" onClick={logout}>Log out</button>
+      {viaHub ? (
+        <p style={{ color: 'var(--text-muted)' }}>
+          Signed in through Bookmark Hub. Lock Bookmark Hub to sign out here as well.
+        </p>
+      ) : (
+        <button className="btn danger" onClick={logout}>Log out</button>
+      )}
     </div>
   );
 }

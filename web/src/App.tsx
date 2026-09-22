@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, ApiError } from './lib/api';
+import { api, ApiError, setUnauthorizedHandler } from './lib/api';
 import { useStore } from './lib/store';
 import Login from './components/Login';
 import ForceChangePassword from './components/ForceChangePassword';
@@ -17,6 +17,7 @@ import FolderPicker from './components/FolderPicker';
 import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
+import { reenterThroughHub, rememberHub, setHubSession } from './lib/hub';
 
 export default function App() {
   const authed = useStore((s) => s.authed);
@@ -37,17 +38,37 @@ export default function App() {
   const [theme, setTheme] = useState<'theme-dark' | 'theme-light'>('theme-light');
 
   useEffect(() => {
+    let leaving = false;
+    // Which Bookmark Hub may frame us (null when none). Behind a proxy that keeps its
+    // own login this 401s until signed in — nothing to re-enter through then anyway.
     api
-      .me()
+      .authStatus()
+      .then((s) => rememberHub(s.hub))
+      .catch(() => {})
+      .then(() => api.me())
       .then((r) => {
+        setHubSession(Boolean(r.hub));
         setMustChangePassword(Boolean(r.mustChangePassword));
         setAuthed(true);
       })
       .catch((e) => {
         if (!(e instanceof ApiError && e.status === 401)) console.error(e);
+        // Inside the Hub's frame without a session: let the Hub sign us in rather
+        // than showing a second login (the Hub refuses if it is locked).
+        else leaving = reenterThroughHub();
       })
-      .finally(() => setChecking(false));
+      .finally(() => {
+        if (!leaving) setChecking(false);
+      });
   }, [setAuthed, setMustChangePassword]);
+
+  // A Hub session ran out while the frame was open: go back through the Hub.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      if (useStore.getState().authed) reenterThroughHub();
+    });
+    return () => setUnauthorizedHandler(undefined);
+  }, []);
 
   useEffect(() => {
     if (!authed) return;

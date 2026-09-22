@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { api } from '../lib/api';
+import { api, type HubStatus } from '../lib/api';
 import { useStore } from '../lib/store';
+import { hubEntryUrl } from '../lib/hub';
 import Icon from './Icon';
 
 export default function Login({ onAuthed }: { onAuthed: () => void }) {
@@ -10,9 +11,16 @@ export default function Login({ onAuthed }: { onAuthed: () => void }) {
   const [confirm, setConfirm] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [hub, setHub] = useState<HubStatus | null>(null);
 
   useEffect(() => {
-    api.authStatus().then((s) => setNeedSetup(!s.passwordSet)).catch(() => {});
+    api
+      .authStatus()
+      .then((s) => {
+        setNeedSetup(!s.passwordSet);
+        setHub(s.hub?.sso ? s.hub : null);
+      })
+      .catch(() => {});
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -68,6 +76,12 @@ export default function Login({ onAuthed }: { onAuthed: () => void }) {
         <button className="btn" type="submit" disabled={busy}>
           {needSetup ? 'Create & Unlock' : 'Unlock'}
         </button>
+        {hub && !needSetup && (
+          // Same door the Hub's "笔记" tab uses: the Hub signs its unlocked administrator in.
+          <button className="btn" type="button" onClick={() => location.assign(hubEntryUrl(hub.url))}>
+            Sign in with Bookmark Hub
+          </button>
+        )}
       </form>
     </div>
   );

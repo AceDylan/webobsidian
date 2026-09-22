@@ -15,6 +15,10 @@ services:
       # Optional trusted reverse-proxy auth; both secret and exact socket peer must match.
       WEBOBSIDIAN_TRUSTED_PROXY_SECRET: ${WEBOBSIDIAN_TRUSTED_PROXY_SECRET:-}
       WEBOBSIDIAN_TRUSTED_PROXY_ADDRESS: ${WEBOBSIDIAN_TRUSTED_PROXY_ADDRESS:-127.0.0.1}
+      # Optional Bookmark Hub embed + single sign-on (docs/HUB_EMBED.md). Values live in .env.
+      WEBOBSIDIAN_HUB_URL: ${WEBOBSIDIAN_HUB_URL:-}
+      WEBOBSIDIAN_HUB_EMBED_SECRET: ${WEBOBSIDIAN_HUB_EMBED_SECRET:-}
+      WEBOBSIDIAN_HUB_SESSION_TTL: ${WEBOBSIDIAN_HUB_SESSION_TTL:-43200}
       # File-watch mode: auto (native + polling fallback) | polling. See .env.example.
       WEBOBSIDIAN_WATCH: ${WEBOBSIDIAN_WATCH:-auto}
       # Proxy trust. Default "true" (trust immediate hop) so X-Forwarded-Proto

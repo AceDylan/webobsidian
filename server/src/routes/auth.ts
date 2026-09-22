@@ -8,8 +8,10 @@ import {
   checkPassword,
   changePassword,
   issueToken,
+  verifyHubSessionToken,
   MIN_PASSWORD_LEN,
 } from '../services/auth.js';
+import { hubOrigin, hubSsoEnabled } from '../services/hubsso.js';
 import { loginRateLimit } from '../middleware/ratelimit.js';
 
 export const authRouter = Router();
@@ -20,14 +22,14 @@ export const authRouter = Router();
 // via `trust proxy`); set COOKIE_SECURE=true/false to force.
 const COOKIE_SECURE = (process.env.COOKIE_SECURE ?? 'auto').toLowerCase();
 
-function cookieOpts(req: Request) {
+export function cookieOpts(req: Request, maxAge = 30 * 24 * 60 * 60 * 1000) {
   const secure =
     COOKIE_SECURE === 'true' ? true : COOKIE_SECURE === 'false' ? false : req.secure;
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
     secure,
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge,
     path: '/',
   };
 }
@@ -36,7 +38,14 @@ authRouter.get(
   '/status',
   asyncHandler(async (_req, res) => {
     // mustChangePassword=true ⇒ still on the default 123456; the UI forces a change.
-    res.json({ passwordSet: await isPasswordSet(), mustChangePassword: !(await hasCustomPassword()) });
+    // hub: the Bookmark Hub this app may be framed by (public — it is in the CSP
+    // header anyway) and whether signing in through it works.
+    const hub = hubOrigin();
+    res.json({
+      passwordSet: await isPasswordSet(),
+      mustChangePassword: !(await hasCustomPassword()),
+      hub: hub ? { url: hub, sso: hubSsoEnabled() } : null,
+    });
   }),
 );
 
@@ -104,7 +113,10 @@ authRouter.post('/logout', (_req, res) => {
 authRouter.get(
   '/me',
   requireAuth,
-  asyncHandler(async (_req, res) => {
-    res.json({ authenticated: true, mustChangePassword: !(await hasCustomPassword()) });
+  asyncHandler(async (req, res) => {
+    const token = req.cookies?.[COOKIE_NAME];
+    // hub=true: this browser was signed in by the Bookmark Hub, whose lock also signs it out here.
+    const hub = typeof token === 'string' && (await verifyHubSessionToken(token));
+    res.json({ authenticated: true, mustChangePassword: !(await hasCustomPassword()), hub });
   }),
 );

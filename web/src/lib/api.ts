@@ -63,6 +63,18 @@ export interface FileContent {
   version: string;
 }
 
+let onUnauthorized: (() => void) | undefined;
+
+/** Called on every 401 before it is thrown (App uses it to re-enter through the Bookmark Hub). */
+export function setUnauthorizedHandler(fn: (() => void) | undefined): void {
+  onUnauthorized = fn;
+}
+
+export interface HubStatus {
+  url: string;
+  sso: boolean;
+}
+
 async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const { headers: optHeaders, ...rest } = opts;
   const res = await fetch(url, {
@@ -73,6 +85,7 @@ async function req<T>(url: string, opts: RequestInit = {}): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...(optHeaders ?? {}) },
   });
   if (res.status === 401) {
+    onUnauthorized?.();
     throw new ApiError('Unauthorized', 401);
   }
   if (!res.ok) {
@@ -96,7 +109,8 @@ export class ApiError extends Error {
 
 export const api = {
   // auth
-  authStatus: () => req<{ passwordSet: boolean; mustChangePassword: boolean }>('/auth/status'),
+  authStatus: () =>
+    req<{ passwordSet: boolean; mustChangePassword: boolean; hub?: HubStatus | null }>('/auth/status'),
   setup: (password: string) =>
     req<{ ok: true }>('/auth/setup', { method: 'POST', body: JSON.stringify({ password }) }),
   login: (password: string) =>
@@ -110,7 +124,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
-  me: () => req<{ authenticated: boolean; mustChangePassword: boolean }>('/auth/me'),
+  me: () => req<{ authenticated: boolean; mustChangePassword: boolean; hub?: boolean }>('/auth/me'),
 
   // files
   tree: () => req<TreeNode>('/api/files/'),

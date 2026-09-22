@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền token share; merge fix F-03 rate-limit, giữ `trust proxy` mặc định bật)
+Cập nhật lần cuối: 2026-09-22 (Phase 28 — nhúng vào Bookmark Hub + SSO qua ticket, PRD 1.6)
 
 ---
 
@@ -429,7 +429,28 @@ Cập nhật lần cuối: 2026-06-27 (security fix — chặn leo thang quyền
       bundle desktop. Root scripts `desktop`/`desktop:dist`/`desktop:publish`; `.gitignore` thêm `desktop/.gen`,
       `desktop/release`.
 
+## Phase 28 — Nhúng vào Bookmark Hub + SSO (FR-3, PRD 1.6, theo yêu cầu người dùng)
+- [x] M28.1 `server/src/services/hubsso.ts`: parse/chuẩn hoá origin Hub, verify ticket (Origin kiểm ở route;
+      chữ ký → mục đích → hạn/TTL ≤ 120 s → issuer → audience → nonce, nonce trong RAM tới khi hết hạn),
+      `safeReturnPath`, fingerprint key; `signHubTicket` cho test.
+- [x] M28.2 Routes `/auth/hub/sso|check|logout` (`server/src/routes/hub.ts`); phiên `amr:'hub'` TTL riêng,
+      tự mất hiệu lực khi tắt/đổi Hub/xoay secret (`services/auth.ts`); `/auth/status` + `/auth/me` báo trạng thái Hub.
+- [x] M28.3 Helmet tách ra `middleware/headers.ts`: `frame-ancestors <hub>` + bỏ X-Frame-Options khi có Hub,
+      giữ nguyên `'none'` khi không.
+- [x] M28.4 SPA: `web/src/lib/hub.ts` — trong iframe hết phiên ⇒ quay lại qua Hub (guard 60 s); Login có nút
+      "Sign in with Bookmark Hub"; Settings giải thích đăng xuất qua khoá Hub.
+- [x] M28.5 Tài liệu + mẫu nginx (`docs/HUB_EMBED.md`, `docs/nginx/webobsidian-hub-embed.conf`), `.env.example`,
+      `docker-compose.yml`. Test: `server/test/hub-sso.test.ts` (17), `web/test/hub-reentry.test.ts` (3);
+      e2e cục bộ Hub + nginx (satisfy any + auth_request) + Playwright 32/32.
+
 ### Nhật ký tiến độ
+- 2026-09-22 (Phase 28 — nhúng vào Bookmark Hub + SSO): Hub (AceDylan/AICheckIn) thêm tab 笔记 nhúng WebObsidian.
+  Ticket không bao giờ vào URL: trang `/vault/open` của Hub POST ticket (form ẩn, tự submit) tới `/auth/hub/sso`.
+  Phát hiện khi e2e: Hub gửi `Referrer-Policy: no-referrer` ⇒ trình duyệt đặt `Origin: null` cho form POST
+  cross-origin ⇒ trang `/vault/open` và fetch logout của Hub dùng `strict-origin`. nginx: `satisfy any` +
+  `auth_request /auth/hub/check` giữ nguyên Basic Auth cho truy cập trực tiếp; fetch không có credential nhận
+  401 không kèm `WWW-Authenticate` (không bật hộp thoại login trong iframe). Verify: typecheck sạch, server
+  test 27/27, web test 4/4, e2e 32/32. Không build image cục bộ; deploy theo CLAUDE.md (Actions → pull).
 - 2026-06-27 (security fix — leo thang quyền qua token share): `verifyToken()` (server/src/services/auth.ts)
   chỉ kiểm tra chữ ký nên **mọi** token ký bằng `auth.jwtSecret` đều được chấp nhận như phiên owner. Endpoint
   public `POST /public/shares/:id/unlock` ký unlock-cookie bằng cùng secret → người được chia sẻ (có mật khẩu

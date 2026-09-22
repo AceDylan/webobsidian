@@ -191,6 +191,9 @@ Useful scripts:
 | `ALLOWED_ROOTS` | – | Comma-separated roots the vault picker may browse |
 | `WEBOBSIDIAN_PASSWORD` | – | Seed/override the master password |
 | `WEBOBSIDIAN_WATCH` | `auto` | File-watch mode: `auto` or `polling` |
+| `WEBOBSIDIAN_HUB_URL` | – | Bookmark Hub origin allowed to frame the app ([docs/HUB_EMBED.md](docs/HUB_EMBED.md)) |
+| `WEBOBSIDIAN_HUB_EMBED_SECRET` | – | Shared secret (≥ 32 chars) for signing in through the Hub |
+| `WEBOBSIDIAN_HUB_SESSION_TTL` | `43200` | Lifetime (s) of a session opened through the Hub |
 | `NODE_OPTIONS` | `--max-old-space-size=4096` | Node heap size — raise for large vaults |
 
 Everything else — git remote/token, API keys, plugins, theme — is configured in the
@@ -313,6 +316,9 @@ See [PRD.md §2](PRD.md) for the full design.
   `ALLOWED_ROOTS`.
 - Secrets (git token / API keys) live in `data/settings.json` on the server — mount `/data`
   as a private volume and keep it off version control. **Change the default password.**
+- Framing is refused (`frame-ancestors 'none'`) unless `WEBOBSIDIAN_HUB_URL` names the one
+  Bookmark Hub allowed to embed the app; signing in through it uses a signed, single-use
+  ticket posted from the Hub's own page — see [docs/HUB_EMBED.md](docs/HUB_EMBED.md).
 
 ---
 

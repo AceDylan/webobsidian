@@ -36,6 +36,12 @@ safely. Key points:
   if you want, or set `TRUST_PROXY=false` for an instance exposed directly to clients
   with no proxy. Either way the login rate limit is keyed on the real TCP socket
   address, so it cannot be bypassed by rotating `X-Forwarded-For`.
+- Bookmark Hub embed (`WEBOBSIDIAN_HUB_URL` + `WEBOBSIDIAN_HUB_EMBED_SECRET`, see
+  `docs/HUB_EMBED.md`): only that one origin may frame the app; a sign-in through it needs the
+  Hub's `Origin` plus an HMAC-signed, 60-second, single-use ticket bound to both sites, and
+  yields a shorter owner session that dies when the bridge is switched off, re-pointed or its
+  secret rotated. Treat the secret like the Hub's admin password. A reverse proxy that keeps its
+  own login must never add its trusted-proxy header on `/auth/hub/*`.
 
 ## Supported versions
 

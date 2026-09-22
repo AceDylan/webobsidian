@@ -1,7 +1,6 @@
-import express, { type Response } from 'express';
+import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import helmet from 'helmet';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +15,7 @@ import { errorHandler } from './middleware/error.js';
 import { COOKIE_NAME, isTrustedProxyAuth } from './middleware/auth.js';
 import { verifyToken } from './services/auth.js';
 import { authRouter } from './routes/auth.js';
+import { hubRouter } from './routes/hub.js';
 import { filesRouter } from './routes/files.js';
 import { searchRouter } from './routes/search.js';
 import { settingsRouter } from './routes/settings.js';
@@ -32,6 +32,8 @@ import { buildFileIndex, indexFile, unindexFile } from './services/fileindex.js'
 import { setBroadcaster, broadcast } from './services/realtime.js';
 import { getVaultRoot, ensureVault, invalidateStat } from './services/vault.js';
 import { startAutoSync } from './services/autosync.js';
+import { logHubState } from './services/hubsso.js';
+import { securityHeaders } from './middleware/headers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -48,6 +50,7 @@ async function main() {
   await loadSettings();
   await setPasswordIfInitial();
   await ensureVault();
+  logHubState();
 
   const app = express();
   // Honour X-Forwarded-* per the deployment's proxy topology (TRUST_PROXY).
@@ -65,35 +68,8 @@ async function main() {
     res.locals.cspNonce = randomBytes(16).toString('base64');
     next();
   });
-  // Security headers. The CSP intentionally does NOT emit `upgrade-insecure-requests`
-  // (it would break plain-HTTP self-hosting). `script-src` is 'self' + per-request
-  // nonce; `style-src` allows inline styles (React inline styles + the SSR page's
-  // <style>). Note: inline <script> inside ```html render-blocks won't execute under
-  // this policy — acceptable for the marginal XSS hardening it buys.
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", (_req, res) => `'nonce-${(res as Response).locals.cspNonce}'`],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-          fontSrc: ["'self'", 'data:'],
-          connectSrc: ["'self'", 'ws:', 'wss:'],
-          objectSrc: ["'none'"],
-          frameSrc: ["'self'", 'blob:'],
-          baseUri: ["'self'"],
-          formAction: ["'self'"],
-          frameAncestors: ["'none'"],
-          upgradeInsecureRequests: null,
-        },
-      },
-      // Allow social crawlers / other sites to load public share og:images.
-      crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
-    }),
-  );
+  // Security headers: helmet + CSP, framing limited to the Bookmark Hub if one is configured.
+  app.use(securityHeaders());
 
   if (!config.isProd) {
     app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
@@ -105,6 +81,7 @@ async function main() {
   // Routes. NOTE: specific /api/* routers must be registered BEFORE the broad
   // '/api' search router, whose router-level requireAuth middleware would
   // otherwise gate every /api/* path (incl. /api/v1 and /api/keys) by prefix.
+  app.use('/auth/hub', hubRouter); // Bookmark Hub sign-in bridge (before /auth)
   app.use('/auth', authRouter);
   app.use('/api/v1', agentRouter); // agent API (api-key auth)
   app.use('/api/files', filesRouter);

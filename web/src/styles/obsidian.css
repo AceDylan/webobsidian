@@ -944,6 +944,7 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 .login-card p { color: var(--text-muted); margin: 4px 0 20px; font-size: 13px; }
 .login-card input { margin-bottom: 12px; padding: 9px 12px; }
 .login-card .btn { width: 100%; padding: 10px; }
+.login-card .btn + .btn { margin-top: 8px; }
 .login-card .err { color: #d6453d; font-size: 12px; min-height: 16px; margin-bottom: 8px; }
 
 .empty-state { flex: 1; display: grid; place-items: center; color: var(--text-faint); text-align: center; }
