@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api, type TreeNode } from '../lib/api';
-import { t } from '../lib/i18n';
+import { keyLabels, t } from '../lib/i18n';
 
 interface Cmd {
   id: string;
@@ -49,10 +49,10 @@ export default function CommandPalette() {
 
   const commands: Cmd[] = useMemo(
     () => [
-      { id: 'new', title: t('New note'), hint: '⌘N', run: () => newNote() },
+      { id: 'new', title: t('New note'), hint: keyLabels('⌘N'), run: () => newNote() },
       { id: 'new-canvas', title: t('New canvas'), run: () => newCanvas() },
       { id: 'daily', title: t('Open today’s daily note'), run: () => openDailyNote() },
-      { id: 'save', title: t('Save current file'), hint: '⌘S', run: () => save() },
+      { id: 'save', title: t('Save current file'), hint: keyLabels('⌘S'), run: () => save() },
       { id: 'bookmark', title: t('Bookmark current file'), run: () => activePath && toggleBookmark(activePath) },
       { id: 'split', title: t('Open current file to the right'), run: () => activePath && openToSide(activePath) },
       { id: 'search', title: t('Open search'), run: () => setLeftPanel('search') },

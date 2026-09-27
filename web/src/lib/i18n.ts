@@ -60,6 +60,8 @@ const ZH: Record<string, string> = {
   Trash: '回收站',
   'Drag to resize': '拖动调整宽度',
   'No vault sync': '未开启同步',
+  'Open menu': '打开菜单',
+  'Toggle left sidebar (⌘\\)': '展开/收起左侧栏 (⌘\\)',
   'Saving…': '保存中…',
   'Git sync': 'Git 同步',
   '{n} words': '{n} 词',
@@ -171,9 +173,18 @@ export function translate(locale: 'zh' | 'en', text: string, vars?: Record<strin
   return out;
 }
 
-/** `text` in the UI language. */
+/** Apple keyboards have ⌘; everywhere else the same shortcuts are on Ctrl (App.tsx takes either). */
+export const APPLE_KEYS =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+
+/** Shortcut hints written the Mac way (`⌘⇧F`), spelled for this keyboard (`Ctrl+Shift+F`). */
+export function keyLabels(text: string, apple: boolean = APPLE_KEYS): string {
+  return apple ? text : text.replace(/⌘/g, 'Ctrl+').replace(/⇧/g, 'Shift+').replace(/⌥/g, 'Alt+');
+}
+
+/** `text` in the UI language, shortcut hints spelled for this keyboard. */
 export function t(text: string, vars?: Record<string, string | number>): string {
-  return translate(LOCALE, text, vars);
+  return keyLabels(translate(LOCALE, text, vars));
 }
 
 if (typeof document !== 'undefined') document.documentElement.lang = LOCALE === 'zh' ? 'zh-CN' : 'en';

@@ -293,7 +293,7 @@ export default function Workspace() {
       <div className="tab-bar">
         <span
           className="tab-new tab-ctl"
-          title={isMobile ? 'Open menu' : 'Toggle left sidebar (⌘\\)'}
+          title={isMobile ? t('Open menu') : t('Toggle left sidebar (⌘\\)')}
           onClick={() => (isMobile ? setMobileDrawer('left') : toggleLeft())}
         >
           <Icon name={isMobile ? 'menu' : 'panel-left'} size={isMobile ? 20 : 16} />

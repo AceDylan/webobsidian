@@ -882,6 +882,7 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
   border-left: 1px solid var(--bg-modifier-border); border-top-left-radius: var(--radius-s);
   font-size: 12px; color: var(--text-faint); z-index: 50;
 }
+.status-bar:empty { display: none; }
 .status-bar .clickable { cursor: pointer; display: flex; align-items: center; gap: 5px; }
 .status-bar .clickable:hover { color: var(--text-normal); }
 

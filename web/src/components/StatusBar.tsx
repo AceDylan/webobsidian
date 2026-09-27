@@ -39,6 +39,10 @@ export default function StatusBar() {
   const isText = activePath && /\.(md|markdown|txt)$/i.test(activePath);
   const words = isText ? content.trim().split(/\s+/).filter(Boolean).length : 0;
 
+  // Only WebObsidian's own git sync is shown here. With it off (Settings → Git) the vault
+  // may well be backed up by something else — a "no sync" warning would be wrong, and
+  // clicking it could only fail.
+  const showGit = Boolean(git?.enabled);
   const gitLabel = !git?.isRepo
     ? t('No vault sync')
     : git.clean
@@ -50,10 +54,12 @@ export default function StatusBar() {
       {dirty && <span>{t('Saving…')}</span>}
       {isText && <span>{t('{n} words', { n: words })}</span>}
       {isText && <span>{t('{n} characters', { n: content.length })}</span>}
-      <span className="clickable" title={t('Git sync')} onClick={sync}>
-        <Icon name="refresh-cw" size={13} style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
-        {gitLabel}
-      </span>
+      {showGit && (
+        <span className="clickable" title={t('Git sync')} onClick={sync}>
+          <Icon name="refresh-cw" size={13} style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
+          {gitLabel}
+        </span>
+      )}
     </div>
   );
 }

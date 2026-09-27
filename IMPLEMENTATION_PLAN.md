@@ -453,8 +453,13 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
 - [~] M29.5 Dịch dần giao diện: đã xong Ribbon, tiêu đề sidebar + menu sắp xếp, file tree + menu ngữ cảnh, thanh tab +
       menu ⋯, thanh trạng thái, sidebar phải (backlinks/outgoing/outline/tags), command palette, panel tìm kiếm.
       Còn: Settings, Graph/Canvas, dialog (share/version/trash), editor/format toolbar.
+- [x] M29.6 Gợi ý phím tắt theo bàn phím: `keyLabels()` trong `t()` — máy Apple giữ ⌘/⇧, còn lại hiện Ctrl+/Shift+
+      (App.tsx vốn nhận cả metaKey lẫn ctrlKey). Status bar chỉ hiện mục git khi đồng bộ git của WebObsidian bật
+      (`git.enabled`); tắt thì không còn dòng 「未开启同步」 gây hiểu lầm (vault có thể được sao lưu bằng cách khác).
 
 ### Nhật ký tiến độ
+- 2026-09-27 (Phase 29, M29.6): phím tắt hiện Ctrl+ trên Windows/Android (người dùng chính dùng Chrome Windows),
+  status bar ẩn mục git khi git sync tắt (`.status-bar:empty` ẩn luôn khung rỗng). Typecheck sạch, test web 7/7.
 - 2026-09-27 (Phase 29, M29.5 đợt 1): dịch ~120 chuỗi giao diện thường dùng (ribbon, sidebar, file tree, thanh tab,
   status bar, sidebar phải). Typecheck sạch, test web 6/6, build + chụp Playwright zh-CN tối: menu ngữ cảnh/nút chế độ/status
   bar hiện tiếng Trung.
