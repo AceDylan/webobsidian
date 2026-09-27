@@ -3,7 +3,8 @@
 > Product Requirements Document
 > Phiên bản: 1.7 · Cập nhật: 2026-09-27 · Trạng thái: Draft
 > Changelog 1.7 (trải nghiệm khi nhúng trong Bookmark Hub, theo yêu cầu người dùng): `ui.theme` thêm giá trị
-> `system` (mặc định mới) — theo sáng/tối của thiết bị, trong iframe của Hub là `color-scheme` của khung; trang
+> `system` (mặc định mới) — theo sáng/tối của thiết bị; trong iframe của Hub thì theo sáng/tối **của Hub** (Hub gửi
+> `#hub_theme=` khi mở khung và gửi message khi đổi — `color-scheme` của khung không truyền sang trang khác origin); trang
 > trước khi app tải cũng theo (`<meta name="color-scheme" content="light dark">`). Workspace trống không còn là
 > ngõ cụt: hiện note mở gần đây, nút mở note chủ (`00-主页.md`/`Home.md`… ở gốc vault) và trên điện thoại nút mở
 > danh sách file. Giao diện có lớp dịch tối thiểu (`web/src/lib/i18n.ts`, khoá = chuỗi tiếng Anh, thiếu thì giữ

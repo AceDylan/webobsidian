@@ -460,8 +460,16 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
       quản lý nút Back của cả trang (Back ở tab khác của Hub → về thư viện rồi mới rời Hub). Entry do frame đẩy vào sẽ
       nằm sau entry của Hub: sau khi chuyển sang tab khác, Back chỉ lật note trong một frame đang bị ẩn. Hai nút ← → ở
       đầu note vẫn đi lại giữa các note; mở riêng (không nhúng) vẫn `pushState` như cũ.
+- [x] M29.8 Sáng/tối theo Hub khi nhúng: Hub có theme riêng (mặc định tối) còn `system` ở đây theo thiết bị ⇒ thiết bị
+      sáng thì Hub tối chứa note trắng. `color-scheme` của phần tử iframe **không** đi vào `prefers-color-scheme` của
+      trang khác origin (đã thử trên Chrome), nên Hub tự báo: `/vault/open?theme=` gắn `#hub_theme=` vào địa chỉ form,
+      trình duyệt giữ fragment qua redirect 303 của `/auth/hub/sso`; `web/src/lib/hubTheme.ts` đọc rồi xoá khỏi địa chỉ,
+      giữ trong sessionStorage của tab; Hub đổi theme ⇒ message `{source:'hub',type:'theme'}` (chỉ nhận từ parent, đúng
+      origin Hub). Chỉ thay cho `system`; chọn tối/sáng cố định vẫn thắng. Test `web/test/hub-theme.test.ts`.
 
 ### Nhật ký tiến độ
+- 2026-09-27 (Phase 29, M29.8): trong frame của Hub, `system` theo sáng/tối của Hub (địa chỉ `#hub_theme=` + message).
+  Typecheck sạch, test web 13/13.
 - 2026-09-27 (Phase 29, M29.7): trong frame của Hub, đổi note chỉ thay địa chỉ (test `urlsync-framed`); Hub cũng thôi
   để lại entry của trang trung gian `/vault/open` (form đăng nhập được gửi vào frame còn trống). Typecheck sạch, test web 8/8.
 - 2026-09-27 (Phase 29, M29.6): phím tắt hiện Ctrl+ trên Windows/Android (người dùng chính dùng Chrome Windows),
