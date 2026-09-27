@@ -456,8 +456,14 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
 - [x] M29.6 Gợi ý phím tắt theo bàn phím: `keyLabels()` trong `t()` — máy Apple giữ ⌘/⇧, còn lại hiện Ctrl+/Shift+
       (App.tsx vốn nhận cả metaKey lẫn ctrlKey). Status bar chỉ hiện mục git khi đồng bộ git của WebObsidian bật
       (`git.enabled`); tắt thì không còn dòng 「未开启同步」 gây hiểu lầm (vault có thể được sao lưu bằng cách khác).
+- [x] M29.7 Lịch sử trình duyệt khi nhúng: trong frame của Hub, `urlsync` chỉ `replaceState` (không `pushState`) — Hub
+      quản lý nút Back của cả trang (Back ở tab khác của Hub → về thư viện rồi mới rời Hub). Entry do frame đẩy vào sẽ
+      nằm sau entry của Hub: sau khi chuyển sang tab khác, Back chỉ lật note trong một frame đang bị ẩn. Hai nút ← → ở
+      đầu note vẫn đi lại giữa các note; mở riêng (không nhúng) vẫn `pushState` như cũ.
 
 ### Nhật ký tiến độ
+- 2026-09-27 (Phase 29, M29.7): trong frame của Hub, đổi note chỉ thay địa chỉ (test `urlsync-framed`); Hub cũng thôi
+  để lại entry của trang trung gian `/vault/open` (form đăng nhập được gửi vào frame còn trống). Typecheck sạch, test web 8/8.
 - 2026-09-27 (Phase 29, M29.6): phím tắt hiện Ctrl+ trên Windows/Android (người dùng chính dùng Chrome Windows),
   status bar ẩn mục git khi git sync tắt (`.status-bar:empty` ẩn luôn khung rỗng). Typecheck sạch, test web 7/7.
 - 2026-09-27 (Phase 29, M29.5 đợt 1): dịch ~120 chuỗi giao diện thường dùng (ribbon, sidebar, file tree, thanh tab,

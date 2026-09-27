@@ -9,7 +9,8 @@
 > danh sách file. Giao diện có lớp dịch tối thiểu (`web/src/lib/i18n.ts`, khoá = chuỗi tiếng Anh, thiếu thì giữ
 > tiếng Anh, ngôn ngữ theo trình duyệt) — chuyển dần từng màn hình. Link ngoài trong Reading view mở tab mới.
 > Gợi ý phím tắt hiện theo bàn phím (⌘ trên máy Apple, Ctrl+ nơi khác); status bar chỉ hiện trạng thái git khi
-> đồng bộ git của chính WebObsidian đang bật.
+> đồng bộ git của chính WebObsidian đang bật. Khi nằm trong frame của Hub, đổi note chỉ thay địa chỉ (không thêm
+> entry lịch sử): nút Back của trình duyệt thuộc về Hub; đi lại giữa các note dùng ← → ở đầu note.
 > Changelog 1.6 (FR-3 — nhúng vào Bookmark Hub + đăng nhập một lần, theo yêu cầu người dùng): cho phép
 > **đúng một** origin Bookmark Hub (`WEBOBSIDIAN_HUB_URL`) nhúng app bằng iframe (`frame-ancestors <hub>`,
 > mặc định vẫn `'none'`). Hub đã mở khoá thì vault không hỏi đăng nhập lần hai: trang riêng của Hub
