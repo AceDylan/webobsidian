@@ -3,6 +3,7 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { isFramed, isHubSession } from '../lib/hub';
 import Icon from './Icon';
+import { t } from '../lib/i18n';
 
 type Section = 'vault' | 'git' | 'api' | 'sharing' | 'plugins' | 'appearance' | 'account' | 'about';
 
@@ -396,11 +397,12 @@ function Appearance({ s }: { s: any }) {
   const save = async (t: string) => { setTheme(t); await api.putSettings({ ui: { theme: t } }); location.reload(); };
   return (
     <div>
-      <h2>Appearance</h2>
-      <Row name="Theme">
+      <h2>{t('Appearance')}</h2>
+      <Row name={t('Theme')}>
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
-          <option value="obsidian-dark">Obsidian Dark</option>
-          <option value="obsidian-light">Obsidian Light</option>
+          <option value="system">{t('Follow system')}</option>
+          <option value="obsidian-dark">{t('Obsidian Dark')}</option>
+          <option value="obsidian-light">{t('Obsidian Light')}</option>
         </select>
       </Row>
     </div>

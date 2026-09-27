@@ -69,7 +69,8 @@ const SettingsSchema = z.object({
     .default({}),
   ui: z
     .object({
-      theme: z.enum(['obsidian-dark', 'obsidian-light']).default('obsidian-light'),
+      // 'system' follows the device's light/dark preference (inside the Bookmark Hub frame: the frame's).
+      theme: z.enum(['system', 'obsidian-dark', 'obsidian-light']).default('system'),
       defaultView: z.enum(['live', 'source', 'reading']).default('live'),
     })
     .default({}),

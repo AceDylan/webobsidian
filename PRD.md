@@ -1,7 +1,13 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.6 · Cập nhật: 2026-09-22 · Trạng thái: Draft
+> Phiên bản: 1.7 · Cập nhật: 2026-09-27 · Trạng thái: Draft
+> Changelog 1.7 (trải nghiệm khi nhúng trong Bookmark Hub, theo yêu cầu người dùng): `ui.theme` thêm giá trị
+> `system` (mặc định mới) — theo sáng/tối của thiết bị, trong iframe của Hub là `color-scheme` của khung; trang
+> trước khi app tải cũng theo (`<meta name="color-scheme" content="light dark">`). Workspace trống không còn là
+> ngõ cụt: hiện note mở gần đây, nút mở note chủ (`00-主页.md`/`Home.md`… ở gốc vault) và trên điện thoại nút mở
+> danh sách file. Giao diện có lớp dịch tối thiểu (`web/src/lib/i18n.ts`, khoá = chuỗi tiếng Anh, thiếu thì giữ
+> tiếng Anh, ngôn ngữ theo trình duyệt) — chuyển dần từng màn hình. Link ngoài trong Reading view mở tab mới.
 > Changelog 1.6 (FR-3 — nhúng vào Bookmark Hub + đăng nhập một lần, theo yêu cầu người dùng): cho phép
 > **đúng một** origin Bookmark Hub (`WEBOBSIDIAN_HUB_URL`) nhúng app bằng iframe (`frame-ancestors <hub>`,
 > mặc định vẫn `'none'`). Hub đã mở khoá thì vault không hỏi đăng nhập lần hai: trang riêng của Hub
@@ -520,7 +526,7 @@ GET    /api/v1/tags
                           "hash": "...", "scopes": ["read","search"],
                           "createdAt": "...", "lastUsed": "..." } ],
               "rateLimitPerMin": 120 },
-  "ui":     { "theme": "obsidian-dark", "defaultView": "live" },
+  "ui":     { "theme": "system", "defaultView": "live" },   // theme: system | obsidian-dark | obsidian-light
   "plugins":{ "enabled": ["dataview"], "installed": [] }
 }
 ```

@@ -18,6 +18,7 @@ import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
 import { reenterThroughHub, rememberHub, setHubSession } from './lib/hub';
+import { usePrefersDark } from './lib/usePrefersDark';
 
 export default function App() {
   const authed = useStore((s) => s.authed);
@@ -35,7 +36,13 @@ export default function App() {
   const save = useStore((s) => s.save);
   const toast = useStore((s) => s.toast);
   const [checking, setChecking] = useState(true);
-  const [theme, setTheme] = useState<'theme-dark' | 'theme-light'>('theme-light');
+  // Saved choice ('system' follows the device) plus the Ribbon's toggle for this visit.
+  const [themePref, setThemePref] = useState<string>('system');
+  const [themeOverride, setThemeOverride] = useState<'theme-dark' | 'theme-light' | null>(null);
+  const prefersDark = usePrefersDark();
+  const theme =
+    themeOverride ??
+    (themePref === 'obsidian-dark' || (themePref === 'system' && prefersDark) ? 'theme-dark' : 'theme-light');
 
   useEffect(() => {
     let leaving = false;
@@ -86,7 +93,7 @@ export default function App() {
       .catch(() => {});
     api
       .getSettings()
-      .then((s) => setTheme(s?.ui?.theme === 'obsidian-dark' ? 'theme-dark' : 'theme-light'))
+      .then((s) => setThemePref(s?.ui?.theme || 'system'))
       .catch(() => {});
     useStore.getState().loadShares(); // badge shared notes in the file tree
     loadPlugins().catch(() => {});
@@ -195,7 +202,7 @@ export default function App() {
   return (
     <div className={theme}>
       <div className={appCls}>
-        <Ribbon onTheme={() => setTheme((t) => (t === 'theme-dark' ? 'theme-light' : 'theme-dark'))} />
+        <Ribbon onTheme={() => setThemeOverride(theme === 'theme-dark' ? 'theme-light' : 'theme-dark')} />
         {showLeft && <Sidebar />}
         <Workspace />
         {showRight && <RightSidebar />}

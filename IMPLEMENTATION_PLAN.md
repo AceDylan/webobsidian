@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-09-22 (Phase 28 — nhúng vào Bookmark Hub + SSO qua ticket, PRD 1.6)
+Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong Bookmark Hub, PRD 1.7)
 
 ---
 
@@ -443,7 +443,20 @@ Cập nhật lần cuối: 2026-09-22 (Phase 28 — nhúng vào Bookmark Hub + S
       `docker-compose.yml`. Test: `server/test/hub-sso.test.ts` (17), `web/test/hub-reentry.test.ts` (3);
       e2e cục bộ Hub + nginx (satisfy any + auth_request) + Playwright 32/32.
 
+## Phase 29 — Trải nghiệm nhúng trong Bookmark Hub (PRD 1.7, theo yêu cầu người dùng)
+- [x] M29.1 `ui.theme = 'system'` (mặc định): `usePrefersDark` + Ribbon chỉ đổi tạm cho lần xem này; index.html
+      khai báo `color-scheme: light dark` để không loé trắng ở chế độ tối trước khi app tải.
+- [x] M29.2 `EmptyWorkspace.tsx`: note gần đây (lọc note đã xoá/đổi tên), nút mở note chủ ở gốc vault,
+      điện thoại có nút mở danh sách file; gợi ý phím ⌘O/⌘P chỉ trên máy tính.
+- [x] M29.3 `web/src/lib/i18n.ts` (`t()`/`translate()`, khoá = chuỗi tiếng Anh) + test `web/test/i18n.test.ts`.
+- [x] M29.4 Reading view: link http(s)/mailto mở tab mới (trước đây điều hướng chính khung, trong Hub là mất app).
+- [ ] M29.5 Dịch dần các màn hình còn lại (file tree, menu ngữ cảnh, Settings, thanh tab…).
+
 ### Nhật ký tiến độ
+- 2026-09-27 (Phase 29): Theme theo hệ thống, workspace trống có note gần đây/note chủ, lớp dịch tối thiểu,
+  link ngoài ở Reading view mở tab mới. Kiểm chứng: typecheck web+server sạch; test web 6/6, server 24/24;
+  build web cục bộ + server tạm (vault mẫu) chụp Playwright tối/zh-CN trên máy tính và điện thoại: launcher hiện
+  「最近打开」, bỏ note đã xoá, bấm là mở note.
 - 2026-09-22 (Phase 28 — nhúng vào Bookmark Hub + SSO): Hub (AceDylan/AICheckIn) thêm tab 笔记 nhúng WebObsidian.
   Ticket không bao giờ vào URL: trang `/vault/open` của Hub POST ticket (form ẩn, tự submit) tới `/auth/hub/sso`.
   Phát hiện khi e2e: Hub gửi `Referrer-Policy: no-referrer` ⇒ trình duyệt đặt `Origin: null` cho form POST

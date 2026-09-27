@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import Icon from './Icon';
+import { t } from '../lib/i18n';
 
 export default function Ribbon({ onTheme }: { onTheme: () => void }) {
   const setLeftPanel = useStore((s) => s.setLeftPanel);
@@ -67,7 +68,7 @@ export default function Ribbon({ onTheme }: { onTheme: () => void }) {
           <Icon name="refresh-cw" size={18} style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
         </button>
       )}
-      <button title="Toggle theme" onClick={onTheme}>
+      <button title={t('Toggle theme')} onClick={onTheme}>
         <Icon name="moon" size={18} />
       </button>
       <button title="Settings" onClick={() => setSettings(true)}>
