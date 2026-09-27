@@ -398,7 +398,7 @@ function Appearance({ s }: { s: any }) {
   return (
     <div>
       <h2>{t('Appearance')}</h2>
-      <Row name={t('Theme')}>
+      <Row name={t('Theme')} desc={isFramed() ? t('Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light.') : undefined}>
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
           <option value="system">{t('Follow system')}</option>
           <option value="obsidian-dark">{t('Obsidian Dark')}</option>
