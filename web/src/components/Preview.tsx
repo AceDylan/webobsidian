@@ -202,6 +202,14 @@ export default function Preview({ source }: { source?: string }) {
       if (link) openWikilink(link);
       return;
     }
+    // An external link opens in a new tab, as in the editor: followed in place it would
+    // replace the app (and inside the Bookmark Hub's frame, load the site in that frame).
+    const anchor = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null;
+    if (anchor && /^(https?:|mailto:)/i.test(anchor.getAttribute('href') || '')) {
+      e.preventDefault();
+      window.open(anchor.href, '_blank', 'noopener');
+      return;
+    }
     // Foldable callout: clicking the title toggles its content.
     const title = (e.target as HTMLElement).closest('.callout[data-callout-fold="-"] > .callout-title, .callout[data-callout-fold="+"] > .callout-title');
     if (title) title.parentElement?.classList.toggle('is-collapsed');
