@@ -451,13 +451,15 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
 - [x] M29.3 `web/src/lib/i18n.ts` (`t()`/`translate()`, khoá = chuỗi tiếng Anh) + test `web/test/i18n.test.ts`.
 - [x] M29.4 Reading view: link http(s)/mailto mở tab mới (trước đây điều hướng chính khung, trong Hub là mất app).
 - [~] M29.5 Dịch dần giao diện: đã xong Ribbon, tiêu đề sidebar + menu sắp xếp, file tree + menu ngữ cảnh, thanh tab +
-      menu ⋯, thanh trạng thái, sidebar phải (backlinks/outgoing/outline/tags). Còn: Settings, command palette, search,
-      Graph/Canvas, dialog (share/version/trash), editor/format toolbar.
+      menu ⋯, thanh trạng thái, sidebar phải (backlinks/outgoing/outline/tags), command palette, panel tìm kiếm.
+      Còn: Settings, Graph/Canvas, dialog (share/version/trash), editor/format toolbar.
 
 ### Nhật ký tiến độ
 - 2026-09-27 (Phase 29, M29.5 đợt 1): dịch ~120 chuỗi giao diện thường dùng (ribbon, sidebar, file tree, thanh tab,
   status bar, sidebar phải). Typecheck sạch, test web 6/6, build + chụp Playwright zh-CN tối: menu ngữ cảnh/nút chế độ/status
   bar hiện tiếng Trung.
+- 2026-09-27 (Phase 29, M29.5 đợt 2): dịch command palette (15 lệnh, placeholder, thông báo reindex) và panel tìm
+  kiếm (placeholder, tuỳ chọn, số kết quả, sắp xếp). Typecheck sạch, test web 6/6.
 - 2026-09-27 (Phase 29): Theme theo hệ thống, workspace trống có note gần đây/note chủ, lớp dịch tối thiểu,
   link ngoài ở Reading view mở tab mới. Kiểm chứng: typecheck web+server sạch; test web 6/6, server 24/24;
   build web cục bộ + server tạm (vault mẫu) chụp Playwright tối/zh-CN trên máy tính và điện thoại: launcher hiện
