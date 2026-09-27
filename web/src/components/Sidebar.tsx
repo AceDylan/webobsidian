@@ -5,12 +5,13 @@ import SearchPanel from './SearchPanel';
 import TagsPanel from './TagsPanel';
 import BookmarksPanel from './BookmarksPanel';
 import Icon from './Icon';
+import { t } from '../lib/i18n';
 
 const TITLES: Record<string, string> = {
-  files: 'Files',
-  search: 'Search',
-  tags: 'Tags',
-  bookmarks: 'Bookmarks',
+  files: t('Files'),
+  search: t('Search'),
+  tags: t('Tags'),
+  bookmarks: t('Bookmarks'),
 };
 
 export default function Sidebar() {
@@ -73,14 +74,14 @@ export default function Sidebar() {
       x: r.left,
       y: r.bottom + 4,
       items: [
-        { label: 'File name (A to Z)', icon: treeSort === 'name-asc' ? 'check' : undefined, onClick: () => setTreeSort('name-asc') },
-        { label: 'File name (Z to A)', icon: treeSort === 'name-desc' ? 'check' : undefined, onClick: () => setTreeSort('name-desc') },
+        { label: t('File name (A to Z)'), icon: treeSort === 'name-asc' ? 'check' : undefined, onClick: () => setTreeSort('name-asc') },
+        { label: t('File name (Z to A)'), icon: treeSort === 'name-desc' ? 'check' : undefined, onClick: () => setTreeSort('name-desc') },
         { label: '', separator: true },
-        { label: 'Modified time (new to old)', icon: treeSort === 'mtime-desc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-desc') },
-        { label: 'Modified time (old to new)', icon: treeSort === 'mtime-asc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-asc') },
+        { label: t('Modified time (new to old)'), icon: treeSort === 'mtime-desc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-desc') },
+        { label: t('Modified time (old to new)'), icon: treeSort === 'mtime-asc' ? 'check' : undefined, onClick: () => setTreeSort('mtime-asc') },
         { label: '', separator: true },
-        { label: 'Created time (new to old)', icon: treeSort === 'ctime-desc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-desc') },
-        { label: 'Created time (old to new)', icon: treeSort === 'ctime-asc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-asc') },
+        { label: t('Created time (new to old)'), icon: treeSort === 'ctime-desc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-desc') },
+        { label: t('Created time (old to new)'), icon: treeSort === 'ctime-asc' ? 'check' : undefined, onClick: () => setTreeSort('ctime-asc') },
       ],
     });
   };
@@ -91,33 +92,33 @@ export default function Sidebar() {
         <span className="nav-title">{TITLES[leftPanel]}</span>
         {leftPanel === 'files' && (
           <>
-            <button className="nav-action" title="New note" onClick={() => newNote()}>
+            <button className="nav-action" title={t('New note')} onClick={() => newNote()}>
               <Icon name="square-pen" size={16} />
             </button>
-            <button className="nav-action" title="New canvas" onClick={() => newCanvas()}>
+            <button className="nav-action" title={t('New canvas')} onClick={() => newCanvas()}>
               <Icon name="layout-dashboard" size={16} />
             </button>
-            <button className="nav-action" title="New folder" onClick={() => newFolder()}>
+            <button className="nav-action" title={t('New folder')} onClick={() => newFolder()}>
               <Icon name="folder-plus" size={16} />
             </button>
-            <button className="nav-action" title="Change sort order" onClick={openSortMenu}>
+            <button className="nav-action" title={t('Change sort order')} onClick={openSortMenu}>
               <Icon name="arrow-up-narrow-wide" size={16} />
             </button>
             <button
               className={`nav-action ${autoReveal ? 'active' : ''}`}
-              title="Auto reveal current file"
+              title={t('Auto reveal current file')}
               onClick={() => toggleAutoReveal()}
             >
               <Icon name="crosshair" size={16} />
             </button>
             <button
               className="nav-action"
-              title={allCollapsed ? 'Expand all' : 'Collapse all'}
+              title={allCollapsed ? t('Expand all') : t('Collapse all')}
               onClick={toggleCollapseAll}
             >
               <Icon name={allCollapsed ? 'chevrons-up-down' : 'chevrons-down-up'} size={16} />
             </button>
-            <button className="nav-action" title="Trash" onClick={() => setTrash(true)}>
+            <button className="nav-action" title={t('Trash')} onClick={() => setTrash(true)}>
               <Icon name="trash" size={16} />
             </button>
           </>
@@ -134,11 +135,11 @@ export default function Sidebar() {
           <Icon name="gem" size={15} /> {vaultName}
         </span>
         <span className="grow" />
-        <button title="Settings" onClick={() => setSettings(true)}>
+        <button title={t('Settings')} onClick={() => setSettings(true)}>
           <Icon name="settings" size={16} />
         </button>
       </div>
-      <div className="sidebar-resizer" title="Drag to resize" onPointerDown={onResizeDown} />
+      <div className="sidebar-resizer" title={t('Drag to resize')} onPointerDown={onResizeDown} />
     </div>
   );
 }
