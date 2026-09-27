@@ -154,6 +154,11 @@ const ZH: Record<string, string> = {
   Relevance: '相关度',
   'Path (A to Z)': '路径（A 到 Z）',
   'Showing {visible} of {total}…': '已显示 {visible} / {total}…',
+  // Note properties (livePreview.ts)
+  Properties: '属性',
+  'Add item': '添加一项',
+  'Delete property': '删除属性',
+  '+ Add property': '+ 添加属性',
 };
 
 export const LOCALE: 'zh' | 'en' =

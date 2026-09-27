@@ -459,7 +459,7 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
   status bar, sidebar phải). Typecheck sạch, test web 6/6, build + chụp Playwright zh-CN tối: menu ngữ cảnh/nút chế độ/status
   bar hiện tiếng Trung.
 - 2026-09-27 (Phase 29, M29.5 đợt 2): dịch command palette (15 lệnh, placeholder, thông báo reindex) và panel tìm
-  kiếm (placeholder, tuỳ chọn, số kết quả, sắp xếp). Typecheck sạch, test web 6/6.
+  kiếm (placeholder, tuỳ chọn, số kết quả, sắp xếp), khung Properties của note. Typecheck sạch, test web 6/6.
 - 2026-09-27 (Phase 29): Theme theo hệ thống, workspace trống có note gần đây/note chủ, lớp dịch tối thiểu,
   link ngoài ở Reading view mở tab mới. Kiểm chứng: typecheck web+server sạch; test web 6/6, server 24/24;
   build web cục bộ + server tạm (vault mẫu) chụp Playwright tối/zh-CN trên máy tính và điện thoại: launcher hiện

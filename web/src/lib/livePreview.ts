@@ -11,6 +11,7 @@ import { syntaxTree } from '@codemirror/language';
 import { CALLOUT_SLOT, CALLOUT_RE, calloutDefaultTitle, calloutIconSvg } from './callouts';
 import { openLightbox } from './imageLightbox';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from './media';
+import { t } from './i18n';
 
 /**
  * Live Preview for CodeMirror 6 — an Obsidian-style WYSIWYG editing mode.
@@ -1518,7 +1519,7 @@ class FrontmatterWidget extends WidgetType {
 
     const header = document.createElement('div');
     header.className = 'cm-props-header';
-    header.textContent = 'Properties';
+    header.textContent = t('Properties');
     box.appendChild(header);
 
     const editable = (el: HTMLElement, onCommit: () => void) => {
@@ -1756,7 +1757,7 @@ class FrontmatterWidget extends WidgetType {
         const add = document.createElement('span');
         add.className = 'prop-pill-add';
         add.textContent = '+';
-        add.title = 'Add item';
+        add.title = t('Add item');
         add.addEventListener('mousedown', (e) => {
           e.preventDefault();
           void startAddItem(p.key, idx, v, add);
@@ -1769,7 +1770,7 @@ class FrontmatterWidget extends WidgetType {
       const del = document.createElement('span');
       del.className = 'prop-del';
       del.textContent = '×';
-      del.title = 'Delete property';
+      del.title = t('Delete property');
       del.addEventListener('mousedown', (e) => {
         e.preventDefault();
         mutate((ps) => ps.splice(idx, 1));
@@ -1781,7 +1782,7 @@ class FrontmatterWidget extends WidgetType {
 
     const addBtn = document.createElement('div');
     addBtn.className = 'cm-props-add';
-    addBtn.textContent = '+ Add property';
+    addBtn.textContent = t('+ Add property');
 
     // Add a property with a name-suggester dropdown (existing vault keys), like Obsidian.
     const startAdd = async () => {
