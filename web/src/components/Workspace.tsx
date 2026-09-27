@@ -14,6 +14,7 @@ import { editorFind, getActiveEditor } from '../lib/activeEditor';
 import { triggerAddProperty } from '../lib/livePreview';
 import { pathToUrl } from '../lib/urlsync';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from '../lib/media';
+import { EmptyWorkspace } from './EmptyWorkspace';
 
 function EditorPane() {
   const activePath = useStore((s) => s.activePath);
@@ -398,16 +399,7 @@ export default function Workspace() {
       )}
 
       <div className={`editor-area ${splitDirection === 'down' ? 'split-down' : ''}`}>
-        {!activePath && (
-          <div className="empty-state">
-            <div>
-              <div className="big">
-                <Icon name="file-text" size={48} />
-              </div>
-              <p>No file is open — pick a note, or press ⌘O</p>
-            </div>
-          </div>
-        )}
+        {!activePath && <EmptyWorkspace isMobile={isMobile} />}
         {activePath === GRAPH_PATH && (
           <div className="pane main-pane">
             <GraphView />

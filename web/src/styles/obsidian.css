@@ -949,6 +949,23 @@ body.wo-col-resizing .sidebar, body.wo-col-resizing .right-sidebar { transition:
 
 .empty-state { flex: 1; display: grid; place-items: center; color: var(--text-faint); text-align: center; }
 .empty-state .big { display: flex; justify-content: center; color: var(--base-40); margin-bottom: 12px; }
+/* Empty workspace launcher (EmptyWorkspace.tsx): recent notes, home note, daily note, file list. */
+.empty-state { overflow-y: auto; padding: 24px 16px; }
+.empty-launch { width: min(420px, 100%); }
+.empty-launch-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-normal); }
+.empty-launch-hint { margin: 6px 0 16px; font-size: 13px; }
+.empty-launch-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.empty-launch-recent { margin-top: 22px; text-align: left; border-top: 1px solid var(--bg-modifier-border); padding-top: 12px; }
+.empty-launch-label { font-size: 12px; color: var(--text-faint); margin: 0 4px 6px; }
+.empty-launch-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; border: 0; border-radius: var(--radius);
+  background: none; color: var(--text-normal); font-size: 14px; text-align: left; cursor: pointer; min-height: 40px; }
+.empty-launch-item:hover, .empty-launch-item:focus-visible { background: var(--bg-modifier-hover); }
+.empty-launch-item svg { flex-shrink: 0; color: var(--text-faint); }
+.empty-launch-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty-launch-folder { margin-left: auto; flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px; color: var(--text-faint); }
+.empty-launch-keys { margin: 18px 0 0; font-size: 12px; }
+.app.mobile .empty-launch-actions .btn { padding: 10px 16px; font-size: 14px; }
 .toast { position: fixed; bottom: 34px; right: 16px; background: var(--bg-primary); border: 1px solid var(--bg-modifier-border);
   padding: 9px 14px; border-radius: var(--radius); z-index: 200; box-shadow: var(--shadow); font-size: 13px; color: var(--text-normal); }
 
