@@ -41,6 +41,22 @@ export function isFramed(): boolean {
   }
 }
 
+/** The framing Hub's origin, or '' when no Hub is configured. */
+export function hubOrigin(): string {
+  try {
+    return hub ? new URL(hub.url).origin : '';
+  } catch {
+    return '';
+  }
+}
+
+/** A message really from the framing Hub: our parent window, on the Hub's origin. */
+export function fromHub(event: { source: unknown; origin: string }): boolean {
+  if (!isFramed() || event.source !== window.parent) return false;
+  const origin = hubOrigin();
+  return Boolean(origin) && event.origin === origin;
+}
+
 export function currentPath(): string {
   return `${location.pathname}${location.search}` || '/';
 }

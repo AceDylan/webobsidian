@@ -1,7 +1,7 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.7 · Cập nhật: 2026-09-27 · Trạng thái: Draft
+> Phiên bản: 1.7 · Cập nhật: 2026-10-01 · Trạng thái: Draft
 > Changelog 1.7 (trải nghiệm khi nhúng trong Bookmark Hub, theo yêu cầu người dùng): `ui.theme` thêm giá trị
 > `system` (mặc định mới) — theo sáng/tối của thiết bị; trong iframe của Hub thì theo sáng/tối **của Hub** (Hub gửi
 > `#hub_theme=` khi mở khung và gửi message khi đổi — `color-scheme` của khung không truyền sang trang khác origin); trang
@@ -11,7 +11,9 @@
 > tiếng Anh, ngôn ngữ theo trình duyệt) — chuyển dần từng màn hình. Link ngoài trong Reading view mở tab mới.
 > Gợi ý phím tắt hiện theo bàn phím (⌘ trên máy Apple, Ctrl+ nơi khác); status bar chỉ hiện trạng thái git khi
 > đồng bộ git của chính WebObsidian đang bật. Khi nằm trong frame của Hub, đổi note chỉ thay địa chỉ (không thêm
-> entry lịch sử): nút Back của trình duyệt thuộc về Hub; đi lại giữa các note dùng ← → ở đầu note.
+> entry lịch sử): nút Back của trình duyệt thuộc về Hub; đi lại giữa các note dùng ← → ở đầu note. Frame đã đăng
+> nhập báo `ready` cho Hub; từ đó Hub mở note ngay trong frame (message `open-note`, trả lời `ok`) thay vì tạo frame
+> mới và đăng nhập lại — không trả lời thì Hub vẫn làm cách cũ.
 > Changelog 1.6 (FR-3 — nhúng vào Bookmark Hub + đăng nhập một lần, theo yêu cầu người dùng): cho phép
 > **đúng một** origin Bookmark Hub (`WEBOBSIDIAN_HUB_URL`) nhúng app bằng iframe (`frame-ancestors <hub>`,
 > mặc định vẫn `'none'`). Hub đã mở khoá thì vault không hỏi đăng nhập lần hai: trang riêng của Hub

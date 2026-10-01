@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong Bookmark Hub, PRD 1.7)
+Cập nhật lần cuối: 2026-10-01 (Phase 29 — trải nghiệm nhúng trong Bookmark Hub, PRD 1.7)
 
 ---
 
@@ -451,8 +451,10 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
 - [x] M29.3 `web/src/lib/i18n.ts` (`t()`/`translate()`, khoá = chuỗi tiếng Anh) + test `web/test/i18n.test.ts`.
 - [x] M29.4 Reading view: link http(s)/mailto mở tab mới (trước đây điều hướng chính khung, trong Hub là mất app).
 - [~] M29.5 Dịch dần giao diện: đã xong Ribbon, tiêu đề sidebar + menu sắp xếp, file tree + menu ngữ cảnh, thanh tab +
-      menu ⋯, thanh trạng thái, sidebar phải (backlinks/outgoing/outline/tags), command palette, panel tìm kiếm.
-      Còn: Settings, Graph/Canvas, dialog (share/version/trash), editor/format toolbar.
+      menu ⋯, thanh trạng thái, sidebar phải (backlinks/outgoing/outline/tags), command palette, panel tìm kiếm,
+      Settings (mọi mục), dialog share/version/trash, format toolbar (title + aria-label). Câu có thẻ `<b>`/`<code>`
+      dùng `tSlots()`/`fillSlots()` (chỗ trống `{name}` nhận phần tử React). Mục Account trước viết tiếng Việt, nay
+      khoá tiếng Anh như các màn khác. Còn: Graph/Canvas.
 - [x] M29.6 Gợi ý phím tắt theo bàn phím: `keyLabels()` trong `t()` — máy Apple giữ ⌘/⇧, còn lại hiện Ctrl+/Shift+
       (App.tsx vốn nhận cả metaKey lẫn ctrlKey). Status bar chỉ hiện mục git khi đồng bộ git của WebObsidian bật
       (`git.enabled`); tắt thì không còn dòng 「未开启同步」 gây hiểu lầm (vault có thể được sao lưu bằng cách khác).
@@ -466,8 +468,17 @@ Cập nhật lần cuối: 2026-09-27 (Phase 29 — trải nghiệm nhúng trong
       trình duyệt giữ fragment qua redirect 303 của `/auth/hub/sso`; `web/src/lib/hubTheme.ts` đọc rồi xoá khỏi địa chỉ,
       giữ trong sessionStorage của tab; Hub đổi theme ⇒ message `{source:'hub',type:'theme'}` (chỉ nhận từ parent, đúng
       origin Hub). Chỉ thay cho `system`; chọn tối/sáng cố định vẫn thắng. Test `web/test/hub-theme.test.ts`.
+- [x] M29.9 Hub mở note ngay trong frame đã đăng nhập: trước đây mỗi lần (link note trong trả lời AI chat, tìm kiếm của
+      Hub, 「查看」 sau khi lưu inbox) Hub tạo frame mới qua `/vault/open` ⇒ đăng nhập lại 1–2 s. `web/src/lib/hubNote.ts`:
+      sau khi khôi phục workspace, gửi `{source:'webobsidian',type:'ready'}` cho parent (đúng origin Hub); nhận
+      `{source:'hub',type:'open-note',id,path}` (chỉ từ parent, đúng origin; path kiểm như Hub: không tuyệt đối, `\`,
+      đoạn rỗng, `..`/đoạn bắt đầu bằng `.`, ký tự điều khiển) ⇒ `openFile`, trả `{type:'open-note',id,ok}`. Không trả
+      lời / `ok:false` ⇒ Hub quay lại frame mới như cũ. Kiểm origin dùng chung `fromHub()` trong `hub.ts`.
+      Test `web/test/hub-note.test.ts`.
 
 ### Nhật ký tiến độ
+- 2026-10-01 (Phase 29, M29.5 + M29.9): dịch Settings/dialog/format toolbar; Hub mở note ngay trong frame (không đăng
+  nhập lại). Typecheck sạch, test web 17/17, test server 24/24, build web OK.
 - 2026-09-27 (Phase 29, M29.8): trong frame của Hub, `system` theo sáng/tối của Hub (địa chỉ `#hub_theme=` + message).
   Typecheck sạch, test web 13/13.
 - 2026-09-27 (Phase 29, M29.7): trong frame của Hub, đổi note chỉ thay địa chỉ (test `urlsync-framed`); Hub cũng thôi

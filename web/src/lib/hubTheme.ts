@@ -7,7 +7,7 @@
 // the address when it opens the frame (#hub_theme=dark, carried over the sign-in
 // redirect), kept for this tab; and by a message when it changes its theme later.
 // Framed, "system" then means the Hub's theme; an explicit theme still wins.
-import { isFramed, knownHub } from './hub';
+import { fromHub, isFramed } from './hub';
 
 export type HubTheme = 'dark' | 'light';
 
@@ -53,15 +53,7 @@ type HubMessage = { source: unknown; origin: string; data: unknown };
 
 /** The theme in a message from the framing Hub (our parent, on the Hub's origin), else null. */
 export function acceptHubTheme(event: HubMessage): HubTheme | null {
-  if (!isFramed() || event.source !== window.parent) return null;
-  const hub = knownHub();
-  let origin = '';
-  try {
-    origin = hub ? new URL(hub.url).origin : '';
-  } catch {
-    origin = '';
-  }
-  if (!origin || event.origin !== origin) return null;
+  if (!fromHub(event)) return null;
   const data = event.data as { source?: unknown; type?: unknown; theme?: unknown } | null;
   if (!data || typeof data !== 'object' || data.source !== 'hub' || data.type !== 'theme') return null;
   const theme = asTheme(data.theme);

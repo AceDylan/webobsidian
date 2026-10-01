@@ -18,6 +18,7 @@ import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
 import { reenterThroughHub, rememberHub, setHubSession } from './lib/hub';
+import { onHubOpenNote } from './lib/hubNote';
 import { usePrefersDark } from './lib/usePrefersDark';
 
 export default function App() {
@@ -82,6 +83,10 @@ export default function App() {
     loadTree();
     // Deep link (/note/<path>) wins over the restored workspace's active note.
     const deepLink = initUrlSync();
+    // Inside the Hub's frame, notes the Hub hands over open here once the workspace
+    // is restored (earlier, the restore would overwrite them; see hubNote.ts).
+    let stopHubNotes: (() => void) | null = null;
+    let closed = false;
     useStore
       .getState()
       .loadUiState() // restore workspace from server + open note(s)
@@ -90,7 +95,10 @@ export default function App() {
           return useStore.getState().openFile(deepLink);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .then(() => {
+        if (!closed) stopHubNotes = onHubOpenNote((path) => useStore.getState().openFile(path));
+      });
     api
       .getSettings()
       .then((s) => setThemePref(s?.ui?.theme || 'system'))
@@ -117,6 +125,8 @@ export default function App() {
       }
     };
     return () => {
+      closed = true;
+      stopHubNotes?.();
       window.clearTimeout(treeTimer);
       ws.close();
     };
