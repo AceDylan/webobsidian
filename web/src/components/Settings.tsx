@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { isFramed, isHubSession } from '../lib/hub';
 import Icon from './Icon';
-import { t } from '../lib/i18n';
+import { t, tSlots } from '../lib/i18n';
 
 type Section = 'vault' | 'git' | 'api' | 'sharing' | 'plugins' | 'appearance' | 'account' | 'about';
 
@@ -26,7 +26,7 @@ export default function Settings() {
           <div className="settings-nav">
             {(['vault', 'git', 'api', 'sharing', 'plugins', 'appearance', 'account', 'about'] as Section[]).map((s) => (
               <button key={s} className={section === s ? 'active' : ''} onClick={() => setSection(s)}>
-                {labels[s]}
+                {t(labels[s])}
               </button>
             ))}
           </div>
@@ -76,7 +76,7 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
   const save = async () => {
     await api.putSettings({ vault: { path } });
     await reload();
-    alert('Vault path saved. Reindex from the command palette if needed.');
+    alert(t('Vault path saved. Reindex from the command palette if needed.'));
   };
   const saveDeleteMode = async (mode: string) => {
     setDeleteMode(mode);
@@ -86,13 +86,13 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
   const browse = async (dir?: string) => setBrowser(await api.browse(dir).catch((e) => ({ error: e.message })));
   return (
     <div>
-      <h2>Vault & Files</h2>
-      <Row name="Vault path" desc="Absolute path on the server to your notes folder">
+      <h2>{t('Vault & Files')}</h2>
+      <Row name={t('Vault path')} desc={t('Absolute path on the server to your notes folder')}>
         <input className="text-input" style={{ width: 260 }} value={path} onChange={(e) => setPath(e.target.value)} />
       </Row>
       <div style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
-        <button className="btn secondary" onClick={() => browse()}>Browse…</button>
-        <button className="btn" onClick={save}>Save vault path</button>
+        <button className="btn secondary" onClick={() => browse()}>{t('Browse…')}</button>
+        <button className="btn" onClick={save}>{t('Save vault path')}</button>
       </div>
       {browser && !browser.error && (
         <div style={{ border: '1px solid var(--bg-modifier-border)', borderRadius: 6, padding: 8, marginTop: 8 }}>
@@ -104,7 +104,7 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
             <div className="result" key={f.path} onClick={() => browse(f.path)} onDoubleClick={() => setPath(f.path)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Icon name="folder" size={15} /> {f.name}
               <button className="btn secondary" style={{ float: 'right', padding: '2px 8px' }} onClick={(e) => { e.stopPropagation(); setPath(f.path); }}>
-                Select
+                {t('Select')}
               </button>
             </div>
           ))}
@@ -112,8 +112,8 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
       )}
       {browser?.error && <div style={{ color: '#e5534b' }}>{browser.error}</div>}
       <Row
-        name="When deleting a file"
-        desc="Move to .trash keeps a recoverable copy (Open trash to restore). Permanently delete removes it immediately."
+        name={t('When deleting a file')}
+        desc={t('Move to .trash keeps a recoverable copy (Open trash to restore). Permanently delete removes it immediately.')}
       >
         <select
           className="text-input"
@@ -121,8 +121,8 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
           value={deleteMode}
           onChange={(e) => saveDeleteMode(e.target.value)}
         >
-          <option value="trash">Move to .trash (recoverable)</option>
-          <option value="permanent">Permanently delete</option>
+          <option value="trash">{t('Move to .trash (recoverable)')}</option>
+          <option value="permanent">{t('Permanently delete')}</option>
         </select>
       </Row>
     </div>
@@ -144,7 +144,7 @@ function GitSettings({ s, reload }: { s: any; reload: () => void }) {
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
-  const save = async () => { await api.putSettings({ git: g }); await reload(); append(['Saved git settings']); };
+  const save = async () => { await api.putSettings({ git: g }); await reload(); append([t('Saved git settings')]); };
   const run = async (fn: () => Promise<any>, label: string) => {
     append([`${label}…`]);
     try {
@@ -152,50 +152,50 @@ function GitSettings({ s, reload }: { s: any; reload: () => void }) {
       // sync returns { ok, log: string[] }; others return { message }. Split any
       // embedded newlines so multi-line git output renders one line per row.
       const lines: string[] = Array.isArray(r?.log)
-        ? [`${label} ${r.ok ? 'ok' : 'NOT ok'}`, ...r.log]
+        ? [t(r.ok ? '{action} ok' : '{action} NOT ok', { action: label }), ...r.log]
         : [String(r?.message ?? JSON.stringify(r))];
       append(lines.flatMap((l) => String(l).split('\n')));
-    } catch (e: any) { append([`Error: ${e.message}`]); }
+    } catch (e: any) { append([t('Error: {message}', { message: e.message })]); }
   };
   return (
     <div>
-      <h2>GitHub Sync</h2>
-      <Row name="Enable git sync"><input type="checkbox" checked={g.enabled} onChange={(e) => set('enabled', e.target.checked)} /></Row>
-      <Row name="Remote URL" desc="https://github.com/owner/repo.git">
+      <h2>{t('GitHub Sync')}</h2>
+      <Row name={t('Enable git sync')}><input type="checkbox" checked={g.enabled} onChange={(e) => set('enabled', e.target.checked)} /></Row>
+      <Row name={t('Remote URL')} desc="https://github.com/owner/repo.git">
         <input className="text-input" style={{ width: 260 }} value={g.remote} onChange={(e) => set('remote', e.target.value)} />
       </Row>
-      <Row name="Branch"><input className="text-input" style={{ width: 120 }} value={g.branch} onChange={(e) => set('branch', e.target.value)} /></Row>
-      <Row name="Access token (PAT)" desc="Stored server-side; leave masked to keep current">
+      <Row name={t('Branch')}><input className="text-input" style={{ width: 120 }} value={g.branch} onChange={(e) => set('branch', e.target.value)} /></Row>
+      <Row name={t('Access token (PAT)')} desc={t('Stored server-side; leave masked to keep current')}>
         <input className="text-input" type="password" style={{ width: 260 }} value={g.token} onChange={(e) => set('token', e.target.value)} />
       </Row>
-      <Row name="Author name"><input className="text-input" value={g.authorName} onChange={(e) => set('authorName', e.target.value)} /></Row>
-      <Row name="Author email"><input className="text-input" value={g.authorEmail} onChange={(e) => set('authorEmail', e.target.value)} /></Row>
-      <Row name="Auto-sync" desc="Periodic pull+commit+push on the interval below"><input type="checkbox" checked={g.autoSync} onChange={(e) => set('autoSync', e.target.checked)} /></Row>
-      <Row name="Auto-commit on save" desc="Commit (+push) ~5s after each edit"><input type="checkbox" checked={g.autoCommitOnSave} onChange={(e) => set('autoCommitOnSave', e.target.checked)} /></Row>
-      <Row name="Interval (sec)"><input className="text-input" type="number" style={{ width: 90 }} value={g.intervalSec} onChange={(e) => set('intervalSec', Number(e.target.value))} /></Row>
-      <Row name="Git LFS patterns" desc="Space-separated globs tracked via LFS">
+      <Row name={t('Author name')}><input className="text-input" value={g.authorName} onChange={(e) => set('authorName', e.target.value)} /></Row>
+      <Row name={t('Author email')}><input className="text-input" value={g.authorEmail} onChange={(e) => set('authorEmail', e.target.value)} /></Row>
+      <Row name={t('Auto-sync')} desc={t('Periodic pull+commit+push on the interval below')}><input type="checkbox" checked={g.autoSync} onChange={(e) => set('autoSync', e.target.checked)} /></Row>
+      <Row name={t('Auto-commit on save')} desc={t('Commit (+push) ~5s after each edit')}><input type="checkbox" checked={g.autoCommitOnSave} onChange={(e) => set('autoCommitOnSave', e.target.checked)} /></Row>
+      <Row name={t('Interval (sec)')}><input className="text-input" type="number" style={{ width: 90 }} value={g.intervalSec} onChange={(e) => set('intervalSec', Number(e.target.value))} /></Row>
+      <Row name={t('Git LFS patterns')} desc={t('Space-separated globs tracked via LFS')}>
         <input className="text-input" style={{ width: 260 }} value={(g.lfsPatterns || []).join(' ')} onChange={(e) => set('lfsPatterns', e.target.value.split(/\s+/).filter(Boolean))} />
       </Row>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-        <button className="btn" onClick={save}>Save</button>
-        <button className="btn secondary" onClick={() => run(api.gitInit, 'Init')}>Init repo</button>
-        <button className="btn secondary" onClick={() => run(api.gitClone, 'Clone')}>Clone</button>
-        <button className="btn secondary" onClick={() => run(api.gitPull, 'Pull')}>Pull</button>
-        <button className="btn secondary" onClick={() => run(() => api.gitCommit(), 'Commit')}>Commit</button>
-        <button className="btn secondary" onClick={() => run(api.gitPush, 'Push')}>Push</button>
-        <button className="btn" onClick={() => run(() => api.gitSync(), 'Sync')}>Sync now</button>
+        <button className="btn" onClick={save}>{t('Save')}</button>
+        <button className="btn secondary" onClick={() => run(api.gitInit, t('Init'))}>{t('Init repo')}</button>
+        <button className="btn secondary" onClick={() => run(api.gitClone, t('Clone'))}>{t('Clone')}</button>
+        <button className="btn secondary" onClick={() => run(api.gitPull, t('Pull'))}>{t('Pull')}</button>
+        <button className="btn secondary" onClick={() => run(() => api.gitCommit(), t('Commit'))}>{t('Commit')}</button>
+        <button className="btn secondary" onClick={() => run(api.gitPush, t('Push'))}>{t('Push')}</button>
+        <button className="btn" onClick={() => run(() => api.gitSync(), t('Sync'))}>{t('Sync now')}</button>
       </div>
       <div style={{ marginTop: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Sync log</span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('Sync log')}</span>
           {log.length > 0 && (
-            <button className="btn secondary" style={{ padding: '2px 8px' }} onClick={() => setLog([])}>Clear</button>
+            <button className="btn secondary" style={{ padding: '2px 8px' }} onClick={() => setLog([])}>{t('Clear')}</button>
           )}
         </div>
         <textarea
           ref={logRef}
           readOnly
-          value={log.length ? log.join('\n') : 'No git activity yet. Click an action above (Sync now, Pull, Push…) to see logs here.'}
+          value={log.length ? log.join('\n') : t('No git activity yet. Click an action above (Sync now, Pull, Push…) to see logs here.')}
           style={{
             width: '100%', height: 200, boxSizing: 'border-box', resize: 'vertical',
             background: 'var(--bg-primary)', color: 'var(--text-normal)',
@@ -223,10 +223,12 @@ function ApiKeys() {
   };
   return (
     <div>
-      <h2>API Keys</h2>
-      <p style={{ color: 'var(--text-muted)' }}>Keys let AI agents call <code>/api/v1</code>. The raw key is shown once.</p>
-      <Row name="Name"><input className="text-input" value={name} onChange={(e) => setName(e.target.value)} /></Row>
-      <Row name="Scopes">
+      <h2>{t('API Keys')}</h2>
+      <p style={{ color: 'var(--text-muted)' }}>
+        {tSlots('Keys let AI agents call {path}. The raw key is shown once.', { path: <code key="path">/api/v1</code> })}
+      </p>
+      <Row name={t('Name')}><input className="text-input" value={name} onChange={(e) => setName(e.target.value)} /></Row>
+      <Row name={t('Scopes')}>
         <span>
           {['read', 'write', 'search'].map((sc) => (
             <label key={sc} style={{ marginRight: 10 }}>
@@ -235,11 +237,11 @@ function ApiKeys() {
           ))}
         </span>
       </Row>
-      <button className="btn" onClick={create}>Create key</button>
+      <button className="btn" onClick={create}>{t('Create key')}</button>
       {created && (
         <pre style={{ background: 'var(--bg-primary)', padding: 10, borderRadius: 6, marginTop: 10, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
           {created}
-          {'\n'}⚠ Copy now — it will not be shown again.
+          {'\n'}{t('⚠ Copy now — it will not be shown again.')}
         </pre>
       )}
       <div style={{ marginTop: 16 }}>
@@ -247,9 +249,9 @@ function ApiKeys() {
           <div className="setting-row" key={k.id}>
             <div className="info">
               <div className="name">{k.name} <span style={{ color: 'var(--text-faint)' }}>{k.prefix}…</span></div>
-              <div className="desc">scopes: {k.scopes.join(', ')} · used: {k.lastUsed ?? 'never'}</div>
+              <div className="desc">{t('scopes: {scopes} · used: {used}', { scopes: k.scopes.join(', '), used: k.lastUsed ?? t('never') })}</div>
             </div>
-            <button className="btn danger" onClick={async () => { await api.revokeKey(k.id); load(); }}>Revoke</button>
+            <button className="btn danger" onClick={async () => { await api.revokeKey(k.id); load(); }}>{t('Revoke')}</button>
           </div>
         ))}
       </div>
@@ -270,26 +272,26 @@ function Shares() {
   const url = (id: string) => `${location.origin}/share/${id}`;
   const copy = (id: string) => {
     navigator.clipboard?.writeText(url(id)).catch(() => {});
-    notify('Public link copied');
+    notify(t('Public link copied'));
   };
   const toggle = async (s: any) => {
     await api.setShareEnabled(s.id, !s.enabled);
     load();
   };
   const remove = async (s: any) => {
-    if (!confirm(`Delete the public link for "${s.path}"? The URL stops working permanently.`)) return;
+    if (!confirm(t('Delete the public link for "{path}"? The URL stops working permanently.', { path: s.path }))) return;
     await api.deleteShare(s.id);
     load();
   };
   const setPassword = async (s: any) => {
     const pw = prompt(
       s.hasPassword
-        ? 'New password for this link (leave empty to REMOVE the password):'
-        : 'Password for this link:',
+        ? t('New password for this link (leave empty to REMOVE the password):')
+        : t('Password for this link:'),
     );
     if (pw === null) return;
     await api.setSharePassword(s.id, pw || null);
-    notify(pw ? 'Password set' : 'Password removed');
+    notify(pw ? t('Password set') : t('Password removed'));
     load();
   };
 
@@ -298,22 +300,23 @@ function Shares() {
 
   return (
     <div>
-      <h2>Sharing</h2>
+      <h2>{t('Sharing')}</h2>
       <p style={{ color: 'var(--text-muted)' }}>
-        Notes shared via a public link are readable by <b>anyone with the URL</b>, without login.
-        Create a link from a note's context menu ("Share…"). Disable keeps the URL for
-        re-enabling later; delete revokes it permanently.
+        {tSlots(
+          'Notes shared via a public link are readable by {anyone}, without login. Create a link from a note\'s context menu ("Share…"). Disable keeps the URL for re-enabling later; delete revokes it permanently.',
+          { anyone: <b key="anyone">{t('anyone with the URL')}</b> },
+        )}
       </p>
       <input
         className="text-input"
         style={{ width: '100%', margin: '6px 0 12px' }}
-        placeholder="Search shared notes…"
+        placeholder={t('Search shared notes…')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
       {filtered.length === 0 && (
         <div style={{ color: 'var(--text-faint)' }}>
-          {shares.length === 0 ? 'No notes are shared publicly.' : 'No shared note matches the search.'}
+          {shares.length === 0 ? t('No notes are shared publicly.') : t('No shared note matches the search.')}
         </div>
       )}
       {filtered.map((s) => (
@@ -322,27 +325,27 @@ function Shares() {
             <div
               className="name"
               style={{ cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: s.enabled ? 1 : 0.55 }}
-              title={`Open ${s.path}`}
+              title={t('Open {path}', { path: s.path })}
               onClick={() => { openFile(s.path); setOpen(false); }}
             >
               {s.path}
             </div>
             <div className="desc">
-              {s.enabled ? 'active' : 'disabled'}
-              {s.hasPassword ? ' · password-protected' : ''} · created {new Date(s.createdAt).toLocaleDateString()}
+              {s.enabled ? t('active') : t('disabled')}
+              {s.hasPassword ? ` · ${t('password-protected')}` : ''} · {t('created {date}', { date: new Date(s.createdAt).toLocaleDateString() })}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
             <button className="btn secondary" disabled={!s.enabled} onClick={() => copy(s.id)} title={url(s.id)}>
-              <Icon name="link" size={14} /> Copy link
+              <Icon name="link" size={14} /> {t('Copy link')}
             </button>
-            <button className="btn secondary" onClick={() => setPassword(s)} title={s.hasPassword ? 'Change or remove password' : 'Require a password to open the link'}>
-              {s.hasPassword ? 'Password ✓' : 'Password…'}
+            <button className="btn secondary" onClick={() => setPassword(s)} title={s.hasPassword ? t('Change or remove password') : t('Require a password to open the link')}>
+              {s.hasPassword ? t('Password ✓') : t('Password…')}
             </button>
             <button className={`btn ${s.enabled ? 'secondary' : ''}`} onClick={() => toggle(s)}>
-              {s.enabled ? 'Disable' : 'Enable'}
+              {s.enabled ? t('Disable') : t('Enable')}
             </button>
-            <button className="btn danger" onClick={() => remove(s)}>Delete</button>
+            <button className="btn danger" onClick={() => remove(s)}>{t('Delete')}</button>
           </div>
         </div>
       ))}
@@ -357,22 +360,22 @@ function Plugins() {
   const load = () => api.listPlugins().then((r) => setPlugins(r.plugins)).catch(() => {});
   useEffect(() => { load(); }, []);
   const install = async () => {
-    setMsg('Installing…');
-    try { await api.installPlugin(repo); setMsg('Installed ✓'); setRepo(''); await load(); }
-    catch (e: any) { setMsg(`Error: ${e.message}`); }
+    setMsg(t('Installing…'));
+    try { await api.installPlugin(repo); setMsg(t('Installed ✓')); setRepo(''); await load(); }
+    catch (e: any) { setMsg(t('Error: {message}', { message: e.message })); }
   };
   return (
     <div>
-      <h2>Community Plugins</h2>
-      <Row name="Install from GitHub" desc="owner/repo — pulls manifest.json + main.js from latest release">
+      <h2>{t('Community Plugins')}</h2>
+      <Row name={t('Install from GitHub')} desc={t('owner/repo — pulls manifest.json + main.js from latest release')}>
         <span style={{ display: 'flex', gap: 8 }}>
           <input className="text-input" placeholder="blacksmithgu/obsidian-dataview" value={repo} onChange={(e) => setRepo(e.target.value)} />
-          <button className="btn" onClick={install}>Install</button>
+          <button className="btn" onClick={install}>{t('Install')}</button>
         </span>
       </Row>
       {msg && <div style={{ color: 'var(--text-muted)', margin: '6px 0' }}>{msg}</div>}
       <div style={{ marginTop: 12 }}>
-        {plugins.length === 0 && <div style={{ color: 'var(--text-faint)' }}>No plugins installed in .obsidian/plugins</div>}
+        {plugins.length === 0 && <div style={{ color: 'var(--text-faint)' }}>{t('No plugins installed in .obsidian/plugins')}</div>}
         {plugins.map((p) => (
           <div className="setting-row" key={p.id}>
             <div className="info">
@@ -380,13 +383,13 @@ function Plugins() {
               <div className="desc">{p.description}</div>
             </div>
             <label>
-              <input type="checkbox" checked={p.enabled} onChange={async (e) => { await api.setPluginEnabled(p.id, e.target.checked); load(); }} /> enabled
+              <input type="checkbox" checked={p.enabled} onChange={async (e) => { await api.setPluginEnabled(p.id, e.target.checked); load(); }} /> {t('enabled')}
             </label>
           </div>
         ))}
       </div>
       <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 14 }}>
-        Note: WebObsidian supports a subset of the Obsidian plugin API. Most metadata/markdown plugins work; plugins relying on Electron/Node internals may not.
+        {t('Note: WebObsidian supports a subset of the Obsidian plugin API. Most metadata/markdown plugins work; plugins relying on Electron/Node internals may not.')}
       </p>
     </div>
   );
@@ -394,7 +397,7 @@ function Plugins() {
 
 function Appearance({ s }: { s: any }) {
   const [theme, setTheme] = useState(s.ui.theme);
-  const save = async (t: string) => { setTheme(t); await api.putSettings({ ui: { theme: t } }); location.reload(); };
+  const save = async (next: string) => { setTheme(next); await api.putSettings({ ui: { theme: next } }); location.reload(); };
   return (
     <div>
       <h2>{t('Appearance')}</h2>
@@ -422,23 +425,23 @@ function AccountSettings({ s, reload }: { s: any; reload: () => void }) {
     setErr('');
     setMsg('');
     if (next.length < 6) {
-      setErr('Mật khẩu mới phải có ít nhất 6 ký tự');
+      setErr(t('New password must be at least 6 characters'));
       return;
     }
     if (next !== confirm) {
-      setErr('Mật khẩu xác nhận không khớp');
+      setErr(t('The new passwords do not match'));
       return;
     }
     setBusy(true);
     try {
       await api.changePassword(current, next);
-      setMsg('Đã đổi mật khẩu ✓');
+      setMsg(t('Password changed ✓'));
       setCurrent('');
       setNext('');
       setConfirm('');
       await reload();
     } catch (e: any) {
-      setErr(e?.message ?? 'Đổi mật khẩu thất bại');
+      setErr(e?.message ?? t('Failed to change password'));
     } finally {
       setBusy(false);
     }
@@ -446,37 +449,44 @@ function AccountSettings({ s, reload }: { s: any; reload: () => void }) {
 
   return (
     <div>
-      <h2>Account</h2>
+      <h2>{t('Account')}</h2>
       <p style={{ color: 'var(--text-muted)' }}>
-        Mật khẩu đăng nhập vào WebObsidian.
+        {t('The password for signing in to WebObsidian.')}
         {usingDefault && (
           <>
-            {' '}Bạn đang dùng <b>mật khẩu mặc định <code>123456</code></b> — hãy đổi mật khẩu để
-            bảo mật vault.
+            {' '}
+            {tSlots('You are using the {default} — change it to keep your vault safe.', {
+              default: <b key="default">{t('default password')} <code>123456</code></b>,
+            })}
           </>
         )}
       </p>
-      <Row name="Mật khẩu hiện tại" desc={usingDefault ? 'Mặc định là 123456' : undefined}>
+      <Row name={t('Current password')} desc={usingDefault ? t('The default is 123456') : undefined}>
         <input className="text-input" type="password" style={{ width: 240 }} value={current}
           onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
       </Row>
-      <Row name="Mật khẩu mới" desc="Tối thiểu 6 ký tự">
+      <Row name={t('New password')} desc={t('At least 6 characters')}>
         <input className="text-input" type="password" style={{ width: 240 }} value={next}
           onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
       </Row>
-      <Row name="Xác nhận mật khẩu mới">
+      <Row name={t('Confirm new password')}>
         <input className="text-input" type="password" style={{ width: 240 }} value={confirm}
           onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
       </Row>
       {err && <div style={{ color: '#e5534b', margin: '6px 0' }}>{err}</div>}
       {msg && <div style={{ color: 'var(--text-accent, #4caf50)', margin: '6px 0' }}>{msg}</div>}
       <button className="btn" onClick={save} disabled={busy || !current || !next}>
-        {busy ? 'Đang lưu…' : 'Đổi mật khẩu'}
+        {busy ? t('Saving…') : t('Change password')}
       </button>
       <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 16 }}>
-        Quên mật khẩu? Đặt <code>auth.passwordHash</code> trong <code>data/settings.json</code> hoặc
-        biến môi trường <code>WEBOBSIDIAN_PASSWORD</code> làm mật khẩu khôi phục (override) rồi đăng
-        nhập lại để đổi mật khẩu mới.
+        {tSlots(
+          'Forgot the password? Set {hash} in {file} or the {env} environment variable as a recovery (override) password, then sign in again and set a new one.',
+          {
+            hash: <code key="hash">auth.passwordHash</code>,
+            file: <code key="file">data/settings.json</code>,
+            env: <code key="env">WEBOBSIDIAN_PASSWORD</code>,
+          },
+        )}
       </p>
     </div>
   );
@@ -489,17 +499,16 @@ function About() {
   const viaHub = isHubSession() && isFramed();
   return (
     <div>
-      <h2>About WebObsidian</h2>
+      <h2>{t('About WebObsidian')}</h2>
       <p style={{ color: 'var(--text-muted)' }}>
-        A self-hosted, Obsidian-compatible web app. Vault, QMD search, GitHub sync (with LFS),
-        agent API and community plugins.
+        {t('A self-hosted, Obsidian-compatible web app. Vault, QMD search, GitHub sync (with LFS), agent API and community plugins.')}
       </p>
       {viaHub ? (
         <p style={{ color: 'var(--text-muted)' }}>
-          Signed in through Bookmark Hub. Lock Bookmark Hub to sign out here as well.
+          {t('Signed in through Bookmark Hub. Lock Bookmark Hub to sign out here as well.')}
         </p>
       ) : (
-        <button className="btn danger" onClick={logout}>Log out</button>
+        <button className="btn danger" onClick={logout}>{t('Log out')}</button>
       )}
     </div>
   );

@@ -162,6 +162,185 @@ const ZH: Record<string, string> = {
   'Add item': '添加一项',
   'Delete property': '删除属性',
   '+ Add property': '+ 添加属性',
+  // Settings (Settings.tsx): section names
+  'Vault & Files': '仓库与文件',
+  'GitHub Sync': 'GitHub 同步',
+  'API Keys': 'API Key',
+  Sharing: '分享',
+  'Community Plugins': '社区插件',
+  Account: '账号',
+  About: '关于',
+  // Settings → Vault & Files
+  'Vault path saved. Reindex from the command palette if needed.': '仓库路径已保存。如有需要，可在命令面板里重建搜索索引。',
+  'Vault path': '仓库路径',
+  'Absolute path on the server to your notes folder': '笔记文件夹在服务器上的绝对路径',
+  'Browse…': '浏览…',
+  'Save vault path': '保存仓库路径',
+  Select: '选择',
+  'When deleting a file': '删除文件时',
+  'Move to .trash keeps a recoverable copy (Open trash to restore). Permanently delete removes it immediately.':
+    '「移到 .trash」会保留可恢复的副本（可在回收站里恢复）；「永久删除」会立即删掉。',
+  'Move to .trash (recoverable)': '移到 .trash（可恢复）',
+  'Permanently delete': '永久删除',
+  // Settings → GitHub Sync
+  'Saved git settings': '已保存 Git 设置',
+  '{action} ok': '{action}成功',
+  '{action} NOT ok': '{action}失败',
+  'Error: {message}': '出错：{message}',
+  'Enable git sync': '启用 Git 同步',
+  'Remote URL': '远程 URL',
+  Branch: '分支',
+  'Access token (PAT)': '访问 Token（PAT）',
+  'Stored server-side; leave masked to keep current': '保存在服务器上；保持掩码不动即沿用当前 Token',
+  'Author name': '作者名',
+  'Author email': '作者邮箱',
+  'Auto-sync': '自动同步',
+  'Periodic pull+commit+push on the interval below': '按下面的间隔定时拉取、提交并推送',
+  'Auto-commit on save': '保存时自动提交',
+  'Commit (+push) ~5s after each edit': '每次编辑后约 5 秒提交（并推送）',
+  'Interval (sec)': '间隔（秒）',
+  'Git LFS patterns': 'Git LFS 匹配规则',
+  'Space-separated globs tracked via LFS': '用 LFS 跟踪的 glob 规则，空格分隔',
+  Save: '保存',
+  Init: '初始化',
+  'Init repo': '初始化 Git 仓库',
+  Clone: '克隆',
+  Pull: '拉取',
+  Commit: '提交',
+  Push: '推送',
+  Sync: '同步',
+  'Sync log': '同步日志',
+  'No git activity yet. Click an action above (Sync now, Pull, Push…) to see logs here.':
+    '还没有 Git 操作。点上面的按钮（立即同步、拉取、推送…）后，日志会显示在这里。',
+  // Settings → API Keys
+  'Keys let AI agents call {path}. The raw key is shown once.': 'AI 智能体可以用 Key 调用 {path}。完整的 Key 只显示一次。',
+  Name: '名称',
+  Scopes: '权限范围',
+  'Create key': '创建 Key',
+  '⚠ Copy now — it will not be shown again.': '⚠ 请现在复制，之后不会再显示。',
+  'scopes: {scopes} · used: {used}': '权限：{scopes} · 上次使用：{used}',
+  never: '从未',
+  Revoke: '吊销',
+  // Settings → Sharing (shared with ShareDialog.tsx)
+  'Public link copied': '公开链接已复制',
+  'Delete the public link for "{path}"? The URL stops working permanently.': '删除「{path}」的公开链接？这个 URL 会永久失效。',
+  'New password for this link (leave empty to REMOVE the password):': '这个链接的新密码（留空则移除密码）：',
+  'Password for this link:': '这个链接的密码：',
+  'Password set': '密码已设置',
+  'Password removed': '密码已移除',
+  'anyone with the URL': '任何拿到 URL 的人',
+  'Notes shared via a public link are readable by {anyone}, without login. Create a link from a note\'s context menu ("Share…"). Disable keeps the URL for re-enabling later; delete revokes it permanently.':
+    '通过公开链接分享的笔记，{anyone}都能免登录阅读。在笔记的右键菜单里点「分享…」创建链接。停用会保留 URL，之后可以重新启用；删除则永久撤销。',
+  'Search shared notes…': '搜索已分享的笔记…',
+  'No notes are shared publicly.': '还没有公开分享的笔记。',
+  'No shared note matches the search.': '没有匹配的已分享笔记。',
+  'Open {path}': '打开 {path}',
+  active: '已启用',
+  disabled: '已停用',
+  'password-protected': '有密码保护',
+  'created {date}': '创建于 {date}',
+  'Copy link': '复制链接',
+  'Change or remove password': '修改或移除密码',
+  'Require a password to open the link': '打开链接需要输入密码',
+  'Password ✓': '密码 ✓',
+  'Password…': '密码…',
+  Disable: '停用',
+  Enable: '启用',
+  // Settings → Community Plugins
+  'Installing…': '正在安装…',
+  'Installed ✓': '已安装 ✓',
+  'Install from GitHub': '从 GitHub 安装',
+  'owner/repo — pulls manifest.json + main.js from latest release': 'owner/repo — 从最新 release 拉取 manifest.json 和 main.js',
+  Install: '安装',
+  'No plugins installed in .obsidian/plugins': '.obsidian/plugins 里还没有安装插件',
+  enabled: '启用',
+  'Note: WebObsidian supports a subset of the Obsidian plugin API. Most metadata/markdown plugins work; plugins relying on Electron/Node internals may not.':
+    '注意：WebObsidian 只支持部分 Obsidian 插件 API。大多数元数据 / Markdown 类插件可以用；依赖 Electron / Node 内部接口的插件可能用不了。',
+  // Settings → Account
+  'New password must be at least 6 characters': '新密码至少要 6 个字符',
+  'The new passwords do not match': '两次输入的新密码不一致',
+  'Password changed ✓': '密码已修改 ✓',
+  'Failed to change password': '修改密码失败',
+  'The password for signing in to WebObsidian.': '登录 WebObsidian 用的密码。',
+  'You are using the {default} — change it to keep your vault safe.': '你正在使用{default}，请修改密码以保护仓库安全。',
+  'default password': '默认密码',
+  'Current password': '当前密码',
+  'The default is 123456': '默认是 123456',
+  'New password': '新密码',
+  'At least 6 characters': '至少 6 个字符',
+  'Confirm new password': '确认新密码',
+  'Change password': '修改密码',
+  'Forgot the password? Set {hash} in {file} or the {env} environment variable as a recovery (override) password, then sign in again and set a new one.':
+    '忘记密码？在 {file} 里设置 {hash}，或用环境变量 {env} 设一个恢复密码（覆盖原密码），然后重新登录再改成新密码。',
+  // Settings → About
+  'About WebObsidian': '关于 WebObsidian',
+  'A self-hosted, Obsidian-compatible web app. Vault, QMD search, GitHub sync (with LFS), agent API and community plugins.':
+    '自托管、兼容 Obsidian 的网页应用：仓库、QMD 搜索、GitHub 同步（支持 LFS）、智能体 API 和社区插件。',
+  'Signed in through Bookmark Hub. Lock Bookmark Hub to sign out here as well.': '已通过 Bookmark Hub 登录。锁定 Bookmark Hub 即可同时退出这里。',
+  'Log out': '退出登录',
+  // Share dialog (ShareDialog.tsx)
+  'Public link created': '公开链接已创建',
+  'Delete this public link? The URL stops working permanently.': '删除这个公开链接？这个 URL 会永久失效。',
+  'Public link deleted': '公开链接已删除',
+  'Share canvas': '分享白板',
+  'Share note': '分享笔记',
+  'Create a public link so {anyone} can read this note without login.': '创建公开链接后，{anyone}都能免登录阅读这篇笔记。',
+  'Create public link': '创建公开链接',
+  'Public link': '公开链接',
+  'Anyone with the URL can view this note': '任何拿到 URL 的人都能查看这篇笔记',
+  'Sharing is paused — the URL returns 404': '分享已暂停，访问 URL 会返回 404',
+  'Toggle public link': '开启/关闭公开链接',
+  'Password protection': '密码保护',
+  'Visitors must enter a password': '访问者需要输入密码',
+  'Anyone with the link can open it': '拿到链接的人都能打开',
+  'Change…': '修改…',
+  'Set password…': '设置密码…',
+  'Delete link': '删除链接',
+  'Revokes the URL permanently': '永久撤销这个 URL',
+  Done: '完成',
+  // Version history (VersionHistory.tsx)
+  'Failed to load history': '加载历史版本失败',
+  '(could not load this version)': '（无法加载这个版本）',
+  'Restore this version? The current content will be overwritten.': '恢复到这个版本？当前内容会被覆盖。',
+  'Restored earlier version': '已恢复到之前的版本',
+  'Restore failed': '恢复失败',
+  'Version history': '历史版本',
+  Close: '关闭',
+  'Loading…': '加载中…',
+  'No history. Enable Git Sync to track versions.': '没有历史版本。开启 Git 同步后才会记录版本。',
+  Latest: '最新',
+  '(no message)': '（无提交说明）',
+  'Restore this version': '恢复这个版本',
+  // Trash (TrashView.tsx)
+  'Failed to load trash': '加载回收站失败',
+  'Restored {path}': '已恢复 {path}',
+  'Permanently delete "{name}"? This cannot be undone.': '永久删除「{name}」？此操作无法撤销。',
+  'Delete failed': '删除失败',
+  'Empty trash? {n} item(s) will be permanently deleted.': '清空回收站？{n} 项将被永久删除。',
+  'Trash emptied': '回收站已清空',
+  'Empty trash failed': '清空回收站失败',
+  '{n} item(s)': '{n} 项',
+  Refresh: '刷新',
+  'Trash is empty.': '回收站是空的。',
+  'Restore to original location': '恢复到原位置',
+  Restore: '恢复',
+  'Delete permanently': '永久删除',
+  'Empty trash': '清空回收站',
+  // Format toolbar (FormatToolbar.tsx)
+  Heading: '标题',
+  Bold: '粗体',
+  Italic: '斜体',
+  'Bullet list': '无序列表',
+  Checklist: '待办列表',
+  Quote: '引用',
+  'Internal link': '内部链接',
+  Link: '链接',
+  'Inline code': '行内代码',
+  Tag: '标签',
+  Indent: '增加缩进',
+  Outdent: '减少缩进',
+  Undo: '撤销',
+  Redo: '重做',
 };
 
 export const LOCALE: 'zh' | 'en' =
@@ -186,6 +365,20 @@ export function keyLabels(text: string, apple: boolean = APPLE_KEYS): string {
 /** `text` in the UI language, shortcut hints spelled for this keyboard. */
 export function t(text: string, vars?: Record<string, string | number>): string {
   return keyLabels(translate(LOCALE, text, vars));
+}
+
+/** Cut `text` at its `{name}` slots and put `slots[name]` in their place, so a slot can
+ *  hold markup (a React element) rather than plain text. Unknown slots stay as written. */
+export function fillSlots<T>(text: string, slots: Record<string, T>): (string | T)[] {
+  return text
+    .split(/\{(\w+)\}/)
+    .map((part, i) => (i % 2 === 0 ? part : part in slots ? slots[part] : `{${part}}`))
+    .filter((part) => part !== '');
+}
+
+/** `t(text)` with markup slots, e.g. `tSlots('Readable by {who}.', { who: <b key="who">…</b> })`. */
+export function tSlots<T>(text: string, slots: Record<string, T>): (string | T)[] {
+  return fillSlots(t(text), slots);
 }
 
 if (typeof document !== 'undefined') document.documentElement.lang = LOCALE === 'zh' ? 'zh-CN' : 'en';
