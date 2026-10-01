@@ -13,7 +13,8 @@
 > đồng bộ git của chính WebObsidian đang bật. Khi nằm trong frame của Hub, đổi note chỉ thay địa chỉ (không thêm
 > entry lịch sử): nút Back của trình duyệt thuộc về Hub; đi lại giữa các note dùng ← → ở đầu note. Frame đã đăng
 > nhập báo `ready` cho Hub; từ đó Hub mở note ngay trong frame (message `open-note`, trả lời `ok`) thay vì tạo frame
-> mới và đăng nhập lại — không trả lời thì Hub vẫn làm cách cũ.
+> mới và đăng nhập lại — không trả lời thì Hub vẫn làm cách cũ. Trên điện thoại, Hub báo phần frame bị bàn phím che
+> (message `keyboard`) để thanh định dạng vẫn nằm trên bàn phím.
 > Changelog 1.6 (FR-3 — nhúng vào Bookmark Hub + đăng nhập một lần, theo yêu cầu người dùng): cho phép
 > **đúng một** origin Bookmark Hub (`WEBOBSIDIAN_HUB_URL`) nhúng app bằng iframe (`frame-ancestors <hub>`,
 > mặc định vẫn `'none'`). Hub đã mở khoá thì vault không hỏi đăng nhập lần hai: trang riêng của Hub

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Icon from './Icon';
 import type { IconName } from './Icon';
 import { t } from '../lib/i18n';
+import { useHubKeyboard } from '../lib/hubKeyboard';
 import {
   fmtInline,
   fmtChecklist,
@@ -60,6 +61,8 @@ function Buttons({ size }: { size: number }) {
  */
 export default function FormatToolbar({ mobile = false }: { mobile?: boolean }) {
   const [bottom, setBottom] = useState(0);
+  // Inside the Hub's frame the keyboard never shows in our visual viewport; the Hub measures it.
+  const hubCovered = useHubKeyboard();
 
   useEffect(() => {
     if (!mobile) return;
@@ -82,7 +85,7 @@ export default function FormatToolbar({ mobile = false }: { mobile?: boolean }) 
 
   if (mobile) {
     return (
-      <div className="mobile-toolbar" style={{ bottom }}>
+      <div className="mobile-toolbar" style={{ bottom: Math.max(bottom, hubCovered) }}>
         <Buttons size={20} />
       </div>
     );

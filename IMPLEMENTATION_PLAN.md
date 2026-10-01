@@ -475,10 +475,17 @@ Cập nhật lần cuối: 2026-10-01 (Phase 29 — trải nghiệm nhúng trong
       đoạn rỗng, `..`/đoạn bắt đầu bằng `.`, ký tự điều khiển) ⇒ `openFile`, trả `{type:'open-note',id,ok}`. Không trả
       lời / `ok:false` ⇒ Hub quay lại frame mới như cũ. Kiểm origin dùng chung `fromHub()` trong `hub.ts`.
       Test `web/test/hub-note.test.ts`.
+- [x] M29.10 Thanh định dạng trên điện thoại khi nhúng: `FormatToolbar` dựa vào visual viewport để nằm trên bàn phím,
+      nhưng trong frame bàn phím chỉ thu nhỏ visual viewport của trang trên cùng (Hub), không phải của frame ⇒ thanh
+      bị bàn phím che. Hub đo phần frame bị che (`đáy frame − (vv.offsetTop + vv.height)`, bỏ qua khi pinch-zoom) và gửi
+      `{source:'hub',type:'keyboard',covered}`; `web/src/lib/hubKeyboard.ts` (`useHubKeyboard`, chỉ nhận từ parent đúng
+      origin Hub, kẹp 0–4000) ⇒ thanh lấy giá trị lớn hơn. Test `web/test/hub-keyboard.test.ts`.
 
 ### Nhật ký tiến độ
 - 2026-10-01 (Phase 29, M29.5 + M29.9): dịch Settings/dialog/format toolbar; Hub mở note ngay trong frame (không đăng
   nhập lại). Typecheck sạch, test web 17/17, test server 24/24, build web OK.
+- 2026-10-01 (Phase 29, M29.10): thanh định dạng trên điện thoại nằm trên bàn phím cả khi nhúng trong Hub. Typecheck
+  sạch, test web 19/19.
 - 2026-09-27 (Phase 29, M29.8): trong frame của Hub, `system` theo sáng/tối của Hub (địa chỉ `#hub_theme=` + message).
   Typecheck sạch, test web 13/13.
 - 2026-09-27 (Phase 29, M29.7): trong frame của Hub, đổi note chỉ thay địa chỉ (test `urlsync-framed`); Hub cũng thôi
