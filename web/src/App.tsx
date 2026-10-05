@@ -17,8 +17,9 @@ import FolderPicker from './components/FolderPicker';
 import { loadPlugins } from './lib/plugins';
 import { initUrlSync } from './lib/urlsync';
 import { useIsMobile } from './lib/useIsMobile';
-import { reenterThroughHub, rememberHub, setHubSession } from './lib/hub';
+import { reenterThroughHub, rememberHub, setHubSession, isFramed } from './lib/hub';
 import { onHubOpenNote } from './lib/hubNote';
+import { onHubEnter } from './lib/haloMotion';
 import { usePrefersDark } from './lib/usePrefersDark';
 
 export default function App() {
@@ -43,7 +44,24 @@ export default function App() {
   const prefersDark = usePrefersDark();
   const theme =
     themeOverride ??
-    (themePref === 'obsidian-dark' || (themePref === 'system' && prefersDark) ? 'theme-dark' : 'theme-light');
+    (themePref === 'obsidian-dark' || themePref === 'halo-dark' || ((themePref === 'system' || themePref === 'halo-system') && prefersDark) ? 'theme-dark' : 'theme-light');
+
+  const halo = themePref.startsWith('halo-') || (themePref === 'system' && isFramed());
+  const themeClass = theme + (halo ? ' halo-theme' : '');
+
+  useEffect(() => {
+    const pause = () => document.documentElement.classList.toggle('motion-paused', document.hidden);
+    pause();
+    document.addEventListener('visibilitychange', pause);
+    const stop = onHubEnter(() => {
+      const shell = document.querySelector('.app');
+      if (!shell || document.hidden) return;
+      shell.classList.remove('halo-enter');
+      void (shell as HTMLElement).offsetWidth;
+      shell.classList.add('halo-enter');
+    });
+    return () => { document.removeEventListener('visibilitychange', pause); stop(); };
+  }, []);
 
   useEffect(() => {
     let leaving = false;
@@ -190,10 +208,10 @@ export default function App() {
     };
   }, [isMobile, setMobileDrawer]);
 
-  if (checking) return <div className={theme} style={{ height: '100%' }} />;
-  if (!authed) return <div className={theme}><Login onAuthed={() => setAuthed(true)} /></div>;
+  if (checking) return <div className={themeClass} style={{ height: '100%' }} />;
+  if (!authed) return <div className={themeClass}><Login onAuthed={() => setAuthed(true)} /></div>;
   // Signed in but still on the default password → block the app until it's changed.
-  if (mustChangePassword) return <div className={theme}><ForceChangePassword /></div>;
+  if (mustChangePassword) return <div className={themeClass}><ForceChangePassword /></div>;
 
   // On mobile the sidebars are overlay drawers (always mounted, slid in/out by
   // CSS), driven by the device-local `mobileDrawer` state — not the persisted
@@ -210,7 +228,7 @@ export default function App() {
   ].filter(Boolean).join(' ');
 
   return (
-    <div className={theme}>
+    <div className={themeClass}>
       <div className={appCls}>
         <Ribbon onTheme={() => setThemeOverride(theme === 'theme-dark' ? 'theme-light' : 'theme-dark')} />
         {showLeft && <Sidebar />}

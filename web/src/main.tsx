@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { takeHubTheme } from './lib/hubTheme';
 import './styles/obsidian.css';
+import './styles/halo.css';
 
 // Framed by the Bookmark Hub: its theme came in the address; keep it, clean the address.
 takeHubTheme();

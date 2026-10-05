@@ -404,6 +404,9 @@ function Appearance({ s }: { s: any }) {
       <Row name={t('Theme')} desc={isFramed() ? t('Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light.') : undefined}>
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
           <option value="system">{t('Follow system')}</option>
+          <option value="halo-system">Halo · {t('Follow system')}</option>
+          <option value="halo-dark">Halo Dark</option>
+          <option value="halo-light">Halo Light</option>
           <option value="obsidian-dark">{t('Obsidian Dark')}</option>
           <option value="obsidian-light">{t('Obsidian Light')}</option>
         </select>

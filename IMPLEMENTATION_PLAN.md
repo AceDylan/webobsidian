@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-01 (Phase 29 — trải nghiệm nhúng trong Bookmark Hub, PRD 1.7)
+Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic, PRD 1.8)
 
 ---
 
@@ -1344,3 +1344,14 @@ Cập nhật lần cuối: 2026-10-01 (Phase 29 — trải nghiệm nhúng trong
   icon globe màu accent cạnh tên. Icon `globe` thêm vào bộ Lucide. Verify headless Chrome qua CDP
   (MCP bị phiên khác giữ): badge hiện đúng note share + màu accent, menu có "Share…", dialog mở đủ
   controls (URL đúng token, toggle on, Set password…, Delete). Typecheck + build sạch.
+
+## Phase 30 — Halo cinematic (PRD 1.8)
+- [x] M30.1 Shared spring tokens, Halo System/Dark/Light, self-hosted Mona Sans, embedded default.
+- [x] M30.2 Night graph, folder aggregation, Bézier relations, selection detail, spring search camera, visibility/mobile/reduced-motion guards.
+- [x] M30.3 Daily overlays/tab indicator and trusted Hub enter message.
+- [~] M30.4 Typecheck, browser desktop/mobile/light/dark/reduced-motion checks, CI deployment and rollback receipt.
+
+### 2026-10-05
+- Begin Phase 30 following explicit user authorization to resume the three-service redesign.
+
+- Validation 2026-10-05: `npm run typecheck` passed; graph scene/theme tests 8 passed; Playwright 8 desktop/mobile × dark/light × reduced/normal contexts, 56 checks passed. StrictMode canceled-frame cleanup verified; hidden Pixi tickers stop; user vault content unchanged. CI/deployment pending.

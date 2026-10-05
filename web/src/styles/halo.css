@@ -1,0 +1,76 @@
+/* Halo Motion — generated with tools/spring.py; shared by all three services. */
+:root {
+  --dur-micro: 160ms; --dur-std: 240ms; --dur-hero: 560ms; --dur-exit: 140ms;
+  --spring-snappy: cubic-bezier(.16,1,.3,1); --spring-smooth: cubic-bezier(.16,1,.3,1); --spring-gentle: cubic-bezier(.16,1,.3,1);
+  --stagger: 36ms; --recede-scale: .975; --dof-blur: 4px;
+}
+@supports (animation-timing-function: linear(0,1)) { :root {
+  --spring-snappy: linear(0, 0.033, 0.113, 0.214, 0.323, 0.43, 0.528, 0.616, 0.692, 0.756, 0.809, 0.852, 0.887, 0.915, 0.937, 0.954, 0.966, 0.976, 0.983, 0.989, 0.993, 0.995, 0.997, 0.999, 1);
+  --spring-smooth: linear(0, 0.032, 0.109, 0.211, 0.323, 0.434, 0.539, 0.633, 0.715, 0.785, 0.842, 0.888, 0.924, 0.952, 0.972, 0.987, 0.997, 1.004, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.008, 1.007, 1.005, 1.004, 1);
+  --spring-gentle: linear(0, 0.024, 0.086, 0.172, 0.27, 0.374, 0.475, 0.571, 0.659, 0.737, 0.804, 0.86, 0.907, 0.944, 0.973, 0.994, 1.01, 1.021, 1.027, 1.031, 1.032, 1.031, 1.029, 1.026, 1.023, 1.02, 1.017, 1.014, 1.011, 1.008, 1.006, 1.004, 1.003, 1.002, 1.001, 1, 1);
+} }
+
+@font-face { font-family: 'Mona Sans'; src: url('/fonts/Mona-Sans.woff2') format('woff2'); font-weight: 200 900; font-display: swap; }
+.halo-theme { --accent-h: 224; --accent-s: 78%; --accent-l: 59%; --radius: 10px; --radius-m: 12px; --radius-l: 16px; --transition: var(--dur-micro) var(--spring-snappy); }
+.halo-theme.theme-dark {
+  --bg-primary: #0e1017; --bg-secondary: #141720; --bg-secondary-alt: #10131b;
+  --bg-primary-alt: #12151e; --bg-modifier-border: #292e3c; --bg-modifier-hover: #222735;
+  --background-primary: #0e1017; --background-secondary: #141720; --background-secondary-alt: #10131b;
+  --background-modifier-border: #292e3c; --background-modifier-hover: #222735;
+  --background-modifier-form-field: #0e1017; --background-modifier-border-focus: #719cff;
+  --text-normal: #eef0f7; --text-muted: #b1b8c8; --text-faint: #909bb0;
+  --interactive-accent: #4068df; --text-accent: #91b2ff; --text-accent-hover: #bdd0ff;
+  --shadow: 0 18px 50px -18px #000b, 0 2px 5px #0005;
+}
+.halo-theme.theme-light {
+  --bg-primary: #fcfcff; --bg-secondary: #f1f3f9; --bg-secondary-alt: #f7f8fc;
+  --bg-primary-alt: #f7f8fc; --bg-modifier-border: #dce0eb; --bg-modifier-hover: #e9edf6;
+  --background-primary: #fcfcff; --background-secondary: #f1f3f9; --background-secondary-alt: #f7f8fc;
+  --background-modifier-border: #dce0eb; --background-modifier-hover: #e9edf6;
+  --background-modifier-form-field: #fff; --background-modifier-border-focus: #4068df;
+  --text-normal: #171c29; --text-muted: #505b70; --text-faint: #626d82;
+  --interactive-accent: #365ddd; --text-accent: #3056cc; --text-accent-hover: #2545b0;
+  --shadow: 0 18px 50px -18px #1c28532b, 0 2px 5px #1c285310;
+}
+.halo-theme :is(h1,h2,h3,.tab .title,.login-card .title) { font-family: 'Mona Sans', var(--font-ui); letter-spacing: -.022em; }
+.halo-theme :is(.settings-modal,.palette,.context-menu,.login-card) { box-shadow: var(--shadow); border-radius: 16px; }
+:is(.palette,.context-menu,.settings-modal,.share-dialog,.version-history,.folder-picker) { animation: halo-overlay var(--dur-std) var(--spring-smooth) both; transform-origin: top center; }
+.context-menu { transform-origin: top left; }
+@keyframes halo-overlay { from { opacity: 0; transform: translateY(6px) scale(.975); } to { opacity: 1; transform: none; } }
+@keyframes halo-fade { from { opacity: 0; } to { opacity: 1; } }
+.halo-enter :is(.ribbon,.tab-bar,.sidebar-header) { animation: halo-overlay var(--dur-std) var(--spring-smooth) both; }
+.halo-enter .tab-bar { animation-delay: var(--stagger); }
+.halo-tab-indicator { position: absolute; bottom: 0; height: 2px; background: var(--interactive-accent); border-radius: 2px; pointer-events: none; transition: transform var(--dur-std) var(--spring-smooth), width var(--dur-std) var(--spring-smooth); }
+.tab-scroll { position: relative; }
+.tab.active { animation: halo-fade var(--dur-micro) ease-out; }
+.tab.active::after { display: none; }
+/* Always-night graph: every readable surface is opaque, including labels drawn by Pixi. */
+.graph-view { color-scheme: dark; --bg-primary: #090c14; --bg-secondary: #111724; --bg-modifier-border: #2b3547; --bg-modifier-hover: #202c41; --text-normal: #edf1fa; --text-muted: #b3bfd5; --text-faint: #9baac3; --interactive-accent: #416ce0; --text-accent: #9fbcff; --text-accent-hover: #c2d5ff; background: #090c14; }
+.graph-canvas-wrap { background: radial-gradient(ellipse at 48% 45%, #151e3226, transparent 60%), #090c14; }
+.graph-node-search, .graph-panel, .graph-node-results, .graph-panel-open { background: #111724; color: #edf1fa; border-color: #2b3547; box-shadow: 0 12px 40px #0004; }
+.graph-hint { background: #090c14; color: #b3bfd5; padding: 4px 8px; border-radius: 6px; pointer-events: none; }
+.graph-folders { position: absolute; left: 16px; bottom: 42px; right: 16px; display: flex; gap: 6px; max-width: calc(100% - 32px); overflow-x: auto; padding: 4px 0; }
+.graph-folders button, .graph-detail button { border: 1px solid #334058; color: #dfe8fb; background: #141d2c; border-radius: 8px; padding: 6px 10px; cursor: pointer; white-space: nowrap; font: inherit; }
+.graph-folders button[aria-pressed=true] { background: #253754; border-color: #7095dc; }
+.graph-folders span { color: #b1c2df; margin-left: 6px; }
+.graph-detail { position: absolute; top: 56px; right: 16px; width: min(300px, calc(100% - 32px)); max-height: calc(100% - 150px); overflow: auto; padding: 18px; background: #121a29; color: #edf1fa; border: 1px solid #354159; border-radius: 16px; box-shadow: 0 20px 64px #0006; animation: halo-overlay var(--dur-std) var(--spring-smooth) both; font-size: 13px; line-height: 1.6; }
+.graph-detail-head { display: flex; align-items: start; gap: 10px; justify-content: space-between; }
+.graph-detail h3 { font-family: 'Mona Sans', var(--font-ui); font-size: 18px; margin: 0; overflow-wrap: anywhere; }
+.graph-detail h4 { font-size: 12px; color: #b9c7e0; margin: 18px 0 8px; }
+.graph-detail-path { color: #aabbd6; overflow-wrap: anywhere; font-size: 11px; }
+.graph-detail-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.graph-detail-links { display: grid; gap: 4px; margin-bottom: 16px; }
+.graph-detail-links button { text-align: left; white-space: normal; overflow-wrap: anywhere; }
+@media (min-width: 769px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .graph-canvas-wrap::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .26; background-image: radial-gradient(circle at 14% 22%, #aabddd 0 1px, transparent 1.5px), radial-gradient(circle at 77% 18%, #ae9cd1 0 1px, transparent 1.5px), radial-gradient(circle at 83% 76%, #aa957d 0 1px, transparent 1.5px), radial-gradient(circle at 26% 83%, #aabddd 0 1px, transparent 1.5px); animation: halo-dust 32s ease-in-out infinite alternate; }
+  @keyframes halo-dust { to { transform: translate3d(3px,-4px,0); } }
+}
+@media (max-width: 768px) { .graph-detail { top: auto; bottom: 88px; max-height: 42%; padding: 14px; } .graph-hint { font-size: 10px; } }
+.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; }
+  :is(.palette,.context-menu,.settings-modal,.share-dialog,.version-history,.folder-picker,.graph-detail), .halo-enter :is(.ribbon,.tab-bar,.sidebar-header) { animation: halo-fade 120ms ease-out both; transform: none; }
+}
+
+.graph-canvas-wrap canvas { transition: transform 160ms var(--spring-snappy); }
+@media (prefers-reduced-motion: reduce), (pointer: coarse) { .graph-canvas-wrap canvas { transform: none !important; transition: none; } }

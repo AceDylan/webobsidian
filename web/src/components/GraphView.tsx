@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type GraphSettings } from '../lib/store';
 import { api } from '../lib/api';
 import Icon from './Icon';
+import { aggregateGraph, folderOf, type SceneKind } from '../lib/graphScene';
+import { reducedMotion, spring } from '../lib/haloMotion';
 import {
   forceSimulation,
   forceManyBody,
@@ -13,7 +15,7 @@ import {
 } from 'd3-force';
 import type { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 
-type NodeKind = 'note' | 'attachment' | 'unresolved' | 'tag';
+type NodeKind = SceneKind;
 
 interface GNode {
   id: string;
@@ -21,6 +23,9 @@ interface GNode {
   kind: NodeKind;
   tags: string[];
   deg: number;
+  count?: number;
+  fx?: number | null;
+  fy?: number | null;
   fade?: number; // Obsidian's fadeAlpha: dims to 0.2 when another node is hovered
   x?: number;
   y?: number;
@@ -30,6 +35,7 @@ interface GNode {
 interface GLink {
   source: GNode | string;
   target: GNode | string;
+  hierarchy?: boolean;
 }
 interface RawGraph {
   nodes: { id: string; label: string; kind: 'note' | 'attachment' | 'unresolved'; tags: string[] }[];
@@ -51,6 +57,8 @@ interface PixiCtx {
   app: Application;
   world: Container;
   edges: Graphics;
+  glows: Graphics;
+  labelBg: Graphics;
   arrows: Graphics;
   nodeLayer: Container;
   labelLayer: Container;
@@ -130,6 +138,8 @@ export default function GraphView() {
   const hover = useRef<GNode | null>(null);
   const drag = useRef<{ px: number; py: number; moved: number } | null>(null);
   const rafRef = useRef<number>();
+  const renders = useRef(0);
+  const tickerState = useRef<{ system: boolean; shared: boolean } | null>(null);
   const fullDirty = useRef(false);
   const edgesDirty = useRef(false);
   const lastEdgeK = useRef(-1);
@@ -139,6 +149,13 @@ export default function GraphView() {
 
   const [rawVersion, setRawVersion] = useState(0);
   const [sceneVersion, setSceneVersion] = useState(0);
+  const flight = useRef<{ start: number; from: { x: number; y: number; k: number } } | null>(null);
+  const selectedRef = useRef<GNode | null>(null);
+  const [selected, setSelected] = useState<GNode | null>(null);
+  const [summary, setSummary] = useState('');
+  const [summaryError, setSummaryError] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [jumpQ, setJumpQ] = useState(''); // "Find node" query
 
   // Keyword match over the nodes currently on the graph: every word must appear
@@ -148,7 +165,9 @@ export default function GraphView() {
     const words = jumpQ.toLowerCase().split(/\s+/).filter(Boolean);
     if (!words.length) return [];
     const scored: { n: GNode; s: number }[] = [];
-    for (const n of nodesRef.current) {
+    const visibleIds = new Set(nodesRef.current.map(n => n.id));
+    const candidates: GNode[] = [...nodesRef.current, ...(rawRef.current?.nodes ?? []).filter(n => n.kind === 'note' && !visibleIds.has(n.id)).map(n => ({ ...n, deg: 0 }))];
+    for (const n of candidates) {
       const label = n.label.toLowerCase();
       const bare = label.startsWith('#') ? label.slice(1) : label; // tags: prefix-match without '#'
       const id = n.id.toLowerCase();
@@ -174,28 +193,7 @@ export default function GraphView() {
 
   // ---- colour helpers -----------------------------------------------------
   const getCols = (): ColorSet => {
-    const Color = mod.current!.Color;
-    const cs = getComputedStyle(document.querySelector('.theme-light, .theme-dark') || document.body);
-    const toInt = (name: string, fb: number) => {
-      const v = cs.getPropertyValue(name).trim();
-      if (!v) return fb;
-      try {
-        return new Color(v).toNumber();
-      } catch {
-        return fb;
-      }
-    };
-    return {
-      accent: toInt('--interactive-accent', 0x7852ee),
-      accentHover: toInt('--text-accent-hover', 0xa98bff),
-      edge: toInt('--text-faint', 0x999999),
-      text: toInt('--text-muted', 0x666666),
-      textStrong: toInt('--text-normal', 0x222222),
-      attach: 0xe0a008,
-      unresolved: toInt('--text-faint', 0xaaaaaa),
-      tag: 0x3aa757, // Obsidian-like green for tag nodes
-      bg: toInt('--bg-primary', 0xffffff),
-    };
+    return { accent: 0x88adff, accentHover: 0xb5caff, edge: 0x596b89, text: 0xa3b2cd, textStrong: 0xe2e8f4, attach: 0xd9b982, unresolved: 0x8a98af, tag: 0xaf9bd1, bg: 0x090c14 };
   };
 
   const colorOf = (n: GNode, cols: ColorSet): number => {
@@ -214,6 +212,8 @@ export default function GraphView() {
         }
       }
     }
+    if (n.kind === 'vault') return 0x9caee5;
+    if (n.kind === 'folder') return 0x8fa4cc;
     if (n.kind === 'attachment') return cols.attach;
     if (n.kind === 'unresolved') return cols.unresolved;
     if (n.kind === 'tag') return cols.tag;
@@ -223,7 +223,7 @@ export default function GraphView() {
   // ---- rendering (camera transform + on-demand repaint) -------------------
   const scheduleRender = (full: boolean) => {
     if (full) fullDirty.current = true;
-    if (rafRef.current) return;
+    if (document.hidden || rafRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = undefined;
       doRender();
@@ -245,7 +245,7 @@ export default function GraphView() {
     };
     const wx = (a.x - v.x) / v.k; // world point pinned under the anchor
     const wy = (a.y - v.y) / v.k;
-    e = e * 0.85 + t * 0.15;
+    e = reducedMotion() ? t : e * 0.85 + t * 0.15;
     v.k = e / dpr;
     v.x = a.x - wx * v.k;
     v.y = a.y - wy * v.k;
@@ -263,27 +263,27 @@ export default function GraphView() {
     const W = wrap?.clientWidth || 900;
     const H = wrap?.clientHeight || 600;
     const t = (zoomTarget.current = Math.min(SCALE_MAX, Math.max(SCALE_MIN, zoomTarget.current)));
-    let e = v.k * dpr;
-    e = e * 0.85 + t * 0.15;
-    v.k = e / dpr;
-    const tx = W / 2 - (n.x ?? 0) * v.k;
-    const ty = H / 2 - (n.y ?? 0) * v.k;
-    v.x = v.x * 0.85 + tx * 0.15;
-    v.y = v.y * 0.85 + ty * 0.15;
-    const done =
-      Math.abs(v.x - tx) < 0.5 && Math.abs(v.y - ty) < 0.5 && (e > t ? e / t : t / e) - 1 < 0.01;
-    if (done) {
-      v.x = tx;
-      v.y = ty;
-      flyNode.current = null;
-    }
+    const f = flight.current ?? { start: performance.now(), from: { ...v } };
+    flight.current = f;
+    const progress = reducedMotion() ? 1 : Math.min(1, (performance.now() - f.start) / 560);
+    const ease = spring(progress);
+    v.k = f.from.k + (t / dpr - f.from.k) * ease;
+    const phone = window.matchMedia('(max-width: 768px)').matches;
+    const focusX = selectedRef.current && !phone ? Math.max(W * .3, (W - 336) / 2) : W / 2;
+    const focusY = selectedRef.current && phone ? H * .28 : H / 2;
+    const tx = focusX - (n.x ?? 0) * v.k;
+    const ty = focusY - (n.y ?? 0) * v.k;
+    v.x = f.from.x + (tx - f.from.x) * ease;
+    v.y = f.from.y + (ty - f.from.y) * ease;
+    const done = progress === 1;
+    if (done) { v.x = tx; v.y = ty; flyNode.current = null; flight.current = null; }
     return !done;
   };
 
   // Obsidian's hover fade: nodes not linked to the highlighted node ease toward
   // alpha 0.2 (mQ lerp, 90% retained per frame). Returns true while animating.
   const stepFade = (): boolean => {
-    const h = hover.current;
+    const h = hover.current ?? selectedRef.current;
     const nb = h ? adjRef.current.get(h) : null;
     let moving = false;
     for (const n of nodesRef.current) {
@@ -293,7 +293,7 @@ export default function GraphView() {
         if (f !== target) n.fade = target;
         continue;
       }
-      n.fade = f * 0.9 + target * 0.1;
+      n.fade = reducedMotion() ? target : f * 0.9 + target * 0.1;
       moving = true;
     }
     return moving;
@@ -309,7 +309,7 @@ export default function GraphView() {
 
   const doRender = () => {
     const p = pixi.current;
-    if (!p) return;
+    if (!p || document.hidden) return;
     const zooming = flyNode.current ? stepFly() : stepZoom();
     const fading = stepFade();
     const { x, y, k } = cam.current;
@@ -334,6 +334,7 @@ export default function GraphView() {
       k,
       x,
       y,
+      renders: ++renders.current,
       target: zoomTarget.current,
       dev: devScale(k),
     };
@@ -365,8 +366,16 @@ export default function GraphView() {
     if (!p) return;
     const s = sref.current;
     const k = cam.current.k || 1;
-    const h = hover.current;
+    const h = hover.current ?? selectedRef.current;
     const g = p.edges;
+    p.glows.clear();
+    if (window.matchMedia('(min-width: 769px) and (pointer: fine)').matches) {
+      for (const n of nodesRef.current) {
+        if (n.kind !== 'vault' && n !== h) continue;
+        const r = screenRadius(n, s, k) / k;
+        for (let i = 5; i > 0; i--) p.glows.circle(n.x ?? 0, n.y ?? 0, r * (1 + i * .65)).fill({ color: p.cols.accent, alpha: .012 });
+      }
+    }
     // Obsidian draws edges at lineSizeMult / scale in world space — i.e. a
     // constant lineSizeMult DEVICE pixels on screen — in a faint theme gray.
     // When a node is hovered, its edges switch to the highlight color and all
@@ -383,7 +392,10 @@ export default function GraphView() {
         continue;
       }
       g.moveTo(a.x ?? 0, a.y ?? 0);
-      g.lineTo(b.x ?? 0, b.y ?? 0);
+      const ax = a.x ?? 0, ay = a.y ?? 0, bx = b.x ?? 0, by = b.y ?? 0;
+      const bend = Math.min(45, Math.hypot(bx - ax, by - ay) * .12);
+      g.bezierCurveTo(ax + (bx - ax) / 3 - bend, ay + (by - ay) / 3,
+        ax + 2 * (bx - ax) / 3 + bend, ay + 2 * (by - ay) / 3, bx, by);
     }
     g.stroke({ width, color: p.cols.edge, alpha: baseAlpha * (h ? FADE_DIM : 1) });
     if (hasHl) {
@@ -392,7 +404,10 @@ export default function GraphView() {
         const b = l.target as GNode;
         if (!(a === h || b === h)) continue;
         g.moveTo(a.x ?? 0, a.y ?? 0);
-        g.lineTo(b.x ?? 0, b.y ?? 0);
+        const ax = a.x ?? 0, ay = a.y ?? 0, bx = b.x ?? 0, by = b.y ?? 0;
+      const bend = Math.min(45, Math.hypot(bx - ax, by - ay) * .12);
+      g.bezierCurveTo(ax + (bx - ax) / 3 - bend, ay + (by - ay) / 3,
+        ax + 2 * (bx - ax) / 3 + bend, ay + 2 * (by - ay) / 3, bx, by);
       }
       g.stroke({ width, color: p.cols.accentHover, alpha: 0.9 });
     }
@@ -454,7 +469,7 @@ export default function GraphView() {
     const { x: cx, y: cy, k } = cam.current;
     const W = wrap.clientWidth;
     const H = wrap.clientHeight;
-    const h = hover.current;
+    const h = hover.current ?? selectedRef.current;
     const e = devScale(k);
     const rs = renderScale(k);
     const dpr = dprNow();
@@ -467,7 +482,7 @@ export default function GraphView() {
     if (textAlpha > 0.001 || h) {
       for (const n of nodesRef.current) {
         const a = n === h ? 1 : textAlpha * (n.fade ?? 1);
-        if (a <= 0.02) continue;
+        if (a <= .5 && n !== h && n.kind !== 'folder' && n.kind !== 'vault') continue;
         const sx = (n.x ?? 0) * k + cx;
         const sy = (n.y ?? 0) * k + cy;
         if (sx < -100 || sx > W + 100 || sy < -60 || sy > H + 60) continue;
@@ -476,12 +491,14 @@ export default function GraphView() {
     }
     // Label pool is bounded; prefer the hovered node, then high-degree nodes.
     cand.sort((u, v) => (v.n === h ? 1 : 0) - (u.n === h ? 1 : 0) || v.n.deg - u.n.deg);
-    const MAX = Math.min(cand.length, 400);
+    const MAX = Math.min(cand.length, window.matchMedia('(max-width: 768px)').matches ? 80 : 240);
+    p.labelBg.clear();
 
     let li = 0;
     for (let ci = 0; ci < MAX; ci++) {
       const { n, sx, sy, a } = cand[ci];
-      const label = n.label.length > 44 ? n.label.slice(0, 42) + '…' : n.label;
+      const name = n.label + (n.count === undefined ? '' : ' · ' + n.count);
+      const label = name.length > 44 ? name.slice(0, 42) + '…' : name;
       const t = ensureLabel(li++);
       if (t.text !== label) t.text = label;
       const isH = n === h;
@@ -495,11 +512,13 @@ export default function GraphView() {
       const r = nodeRadius(n, s);
       const fontMul = (14 + r / 4) / 14;
       const sc = (isH && e < 1 ? 1 / dpr : rs) * fontMul;
-      t.scale.set(sc);
+      t.scale.set(Math.max(11 / 14, sc));
       t.x = sx;
       t.y = sy + (r + 5) * rs + (isH ? 15 / dpr : 0);
-      t.alpha = a;
+      t.alpha = 1;
       t.visible = true;
+      const bw = t.width + 12, bh = t.height + 6;
+      p.labelBg.roundRect(t.x - bw / 2, t.y - 3, bw, bh, 4).fill({ color: 0x0c101a, alpha: 1 });
     }
     for (let i = li; i < p.labels.length; i++) p.labels[i].visible = false;
   };
@@ -597,7 +616,7 @@ export default function GraphView() {
         width: wrap.clientWidth || 900,
         height: wrap.clientHeight || 600,
         antialias: true,
-        resolution: window.devicePixelRatio || 1,
+        resolution: Math.min(window.devicePixelRatio || 1, 2),
         autoDensity: true,
         backgroundAlpha: 0,
         autoStart: false,
@@ -605,34 +624,40 @@ export default function GraphView() {
         powerPreference: 'high-performance',
       });
       if (destroyed) {
-        app.destroy(true);
+        app.destroy(false);
         return;
       }
       app.ticker.stop();
       const world = new PIXI.Container();
       const edges = new PIXI.Graphics();
+      const glows = new PIXI.Graphics();
+      const labelBg = new PIXI.Graphics();
       const arrows = new PIXI.Graphics();
       const nodeLayer = new PIXI.Container();
       const labelLayer = new PIXI.Container();
+      world.addChild(glows);
       world.addChild(edges);
       world.addChild(arrows);
       world.addChild(nodeLayer);
       app.stage.addChild(world);
+      app.stage.addChild(labelBg);
       app.stage.addChild(labelLayer);
 
       const cg = new PIXI.Graphics().circle(0, 0, TEXR).fill(0xffffff);
       const tex = app.renderer.generateTexture({ target: cg, resolution: 2, antialias: true });
       cg.destroy();
 
-      pixi.current = { app, world, edges, arrows, nodeLayer, labelLayer, tex, sprites: new Map(), labels: [], cols: getCols() };
+      pixi.current = { app, world, edges, glows, labelBg, arrows, nodeLayer, labelLayer, tex, sprites: new Map(), labels: [], cols: getCols() };
       buildScene(); // builds from current data (or nothing yet)
-    })();
+      if (document.hidden) { PIXI.Ticker.system.stop(); PIXI.Ticker.shared.stop(); }
+    })().catch(() => { if (!destroyed) setBuildError('Graph renderer is unavailable on this device. Notes remain accessible from the file list.'); });
     return () => {
       destroyed = true;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = undefined;
       const p = pixi.current;
       if (p) {
-        p.app.destroy(true, { children: true, texture: true });
+        p.app.destroy(false, { children: true, texture: true });
         pixi.current = null;
       }
     };
@@ -652,7 +677,7 @@ export default function GraphView() {
         out.width = src.width;
         out.height = src.height;
         const ctx = out.getContext('2d')!;
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim() || '#ffffff';
+        ctx.fillStyle = '#090c14';
         ctx.fillRect(0, 0, out.width, out.height);
         ctx.drawImage(src, 0, 0);
         const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'));
@@ -719,7 +744,7 @@ export default function GraphView() {
         }
       }
 
-      const pairs: { source: string; target: string }[] = [];
+      const pairs: { source: string; target: string; hierarchy?: boolean }[] = [];
       for (const e of raw.edges) {
         if (byId.has(e.source) && byId.has(e.target)) pairs.push({ source: e.source, target: e.target });
       }
@@ -759,6 +784,11 @@ export default function GraphView() {
         pairList = pairList.filter((l) => ids.has(l.source) && ids.has(l.target));
       }
 
+      const scene = aggregateGraph(nodeList, pairList, collapsed, expanded);
+      nodeList = scene.nodes;
+      pairList = scene.edges;
+      selectedRef.current = null; setSelected(null); hover.current = null;
+      flyNode.current = null; flight.current = null;
       const nodeMap = new Map(nodeList.map((n) => [n.id, n] as const));
       const linkList: GLink[] = [];
       const adj = new Map<GNode, Set<GNode>>();
@@ -766,7 +796,7 @@ export default function GraphView() {
         const a = nodeMap.get(l.source);
         const b = nodeMap.get(l.target);
         if (a && b) {
-          linkList.push({ source: a, target: b });
+          linkList.push({ source: a, target: b, hierarchy: l.hierarchy });
           if (!adj.has(a)) adj.set(a, new Set());
           if (!adj.has(b)) adj.set(b, new Set());
           adj.get(a)!.add(b);
@@ -781,7 +811,7 @@ export default function GraphView() {
       setBuildError(null);
       setStats({
         total: raw.nodes.filter((n) => n.kind === 'note').length,
-        shown: nodeList.length,
+        shown: nodeList.filter(n => n.kind === 'note').length,
         orphans: orphanCount,
       });
 
@@ -799,7 +829,16 @@ export default function GraphView() {
         n.y = H / 2 + Math.sin(a) * r;
       });
 
-      // Obsidian's exact simulation (sim.js): d3-force with these params.
+      const core = nodeList.find(n => n.kind === 'vault');
+      if (core) { core.fx = W / 2; core.fy = H / 2; }
+      const folders = nodeList.filter(n => n.kind === 'folder');
+      folders.forEach((n, i) => {
+        const angle = i / Math.max(1, folders.length) * Math.PI * 2 - Math.PI / 2;
+        n.fx = W / 2 + Math.cos(angle) * Math.min(W, H) * .33;
+        n.fy = H / 2 + Math.sin(angle) * Math.min(W, H) * .33;
+      });
+
+      // Keep the existing forces; hierarchy is a presentation layer only. d3-force with these params.
       simRef.current?.stop();
       sim = forceSimulation<GNode>(nodeList)
         .force('charge', forceManyBody<GNode>().strength(chargeStrength(s)).theta(0.9).distanceMin(30))
@@ -813,6 +852,8 @@ export default function GraphView() {
       userMoved.current = false;
       sim.on('tick', () => scheduleRender(true));
       simRef.current = sim;
+      if (document.hidden) sim.stop();
+      else if (reducedMotion()) { sim.stop(); sim.tick(120); scheduleRender(true); }
       setSceneVersion((v) => v + 1); // tell the renderer to (re)create sprites
     } catch (err) {
       console.error('Graph build failed:', err);
@@ -828,7 +869,7 @@ export default function GraphView() {
       sim?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawVersion, settings.tags, settings.attachments, settings.existingOnly, settings.orphans, settings.search]);
+  }, [rawVersion, settings.tags, settings.attachments, settings.existingOnly, settings.orphans, settings.search, collapsed, expanded]);
 
   // rebuild the Pixi scene whenever the data changes (and once Pixi is ready)
   useEffect(() => {
@@ -845,7 +886,10 @@ export default function GraphView() {
     (sim.force('link') as ReturnType<typeof forceLink<GNode, GLink>> | undefined)?.distance(linkDist(s)).strength(linkStrength(s));
     (sim.force('x') as ReturnType<typeof forceX<GNode>> | undefined)?.strength(centerStr(s));
     (sim.force('y') as ReturnType<typeof forceY<GNode>> | undefined)?.strength(centerStr(s));
-    sim.alpha(0.3).restart(); // Obsidian posts alpha .3 on force changes
+    sim.alpha(0.3);
+    if (document.hidden) sim.stop();
+    else if (reducedMotion()) { sim.stop(); sim.tick(80); scheduleRender(true); }
+    else sim.restart(); // Obsidian posts alpha .3 on force changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.repelForce, settings.linkForce, settings.linkDistance, settings.centerForce]);
 
@@ -941,17 +985,45 @@ export default function GraphView() {
   // "Find node" jump: fly the camera to the node (zoom in to at least 2× device
   // scale) and light it up like a hover until the user moves the mouse.
   const flyTo = (n: GNode) => {
+    const live = nodesRef.current.find(v => v.id === n.id);
+    if (!live && n.kind === 'note') {
+      pendingJump.current = n.id;
+      setExpanded(prev => new Set([...prev, folderOf(n.id)]));
+      return;
+    }
+    n = live ?? n;
     zoomTarget.current = Math.min(SCALE_MAX, Math.max(2, devScale(cam.current.k)));
     flyNode.current = n;
+    flight.current = { start: performance.now(), from: { ...cam.current } };
     userMoved.current = true;
+    if (n.kind === 'note') selectNode(n);
     setHover(n);
     scheduleRender(false);
   };
 
-  const onDown = (e: React.MouseEvent) => {
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; x: number; y: number; camera: { x: number; y: number; k: number } } | null>(null);
+  const onDown = (e: React.PointerEvent) => {
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      const r = canvasRef.current!.getBoundingClientRect();
+      pinch.current = { distance: Math.max(1, Math.hypot(a.x-b.x,a.y-b.y)), x: (a.x+b.x)/2-r.left, y: (a.y+b.y)/2-r.top, camera: { ...cam.current } };
+      drag.current = null; e.currentTarget.setPointerCapture?.(e.pointerId); return;
+    }
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    flyNode.current = null; flight.current = null;
     drag.current = { px: e.clientX, py: e.clientY, moved: 0 };
   };
-  const onMove = (e: React.MouseEvent) => {
+  const onMove = (e: React.PointerEvent) => {
+    if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.current && pointers.current.size >= 2) {
+      const [a, b] = [...pointers.current.values()], p = pinch.current;
+      const r = canvasRef.current!.getBoundingClientRect();
+      const k = Math.max(SCALE_MIN / dprNow(), Math.min(SCALE_MAX / dprNow(), p.camera.k * Math.hypot(a.x-b.x,a.y-b.y) / p.distance));
+      cam.current = { k, x: (a.x+b.x)/2-r.left-(p.x-p.camera.x)/p.camera.k*k, y: (a.y+b.y)/2-r.top-(p.y-p.camera.y)/p.camera.k*k };
+      zoomTarget.current = k * dprNow(); flyNode.current = null; userMoved.current = true; scheduleRender(false); return;
+    }
     if (drag.current) {
       const dx = e.clientX - drag.current.px;
       const dy = e.clientY - drag.current.py;
@@ -964,31 +1036,92 @@ export default function GraphView() {
       userMoved.current = true;
       scheduleRender(false);
     } else {
+      if (e.pointerType === 'mouse' && !reducedMotion() && window.matchMedia('(min-width: 769px) and (pointer: fine)').matches) {
+        const r = canvasRef.current!.getBoundingClientRect();
+        canvasRef.current!.style.transform = `translate(${(e.clientX-r.left-r.width/2)/r.width*3}px,${(e.clientY-r.top-r.height/2)/r.height*3}px)`;
+      }
       setHover(nodeAt(e.clientX, e.clientY));
     }
   };
-  const onUp = (e: React.MouseEvent) => {
+  const onUp = (e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId);
+    if (pinch.current) { pinch.current = null; drag.current = null; return; }
     const d = drag.current;
     drag.current = null;
     if (d && d.moved < 5) {
       const n = nodeAt(e.clientX, e.clientY);
       if (!n) return;
-      if (n.kind === 'note') openFile(n.id);
+      if (n.kind === 'folder') {
+        const f = n.id.slice('\u0000halo:folder:'.length);
+        setExpanded(prev => { const next = new Set(prev); if (next.has(f)) next.delete(f); else next.add(f); return next; });
+      } else if (n.kind === 'vault') { setCollapsed(v => !v); }
+      else if (n.kind === 'note') selectNode(n);
       else if (n.kind === 'tag') searchFor(`tag:${n.id.slice(4)}`);
     }
   };
+
+  const pendingJump = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingJump.current) return;
+    const n = nodesRef.current.find(v => v.id === pendingJump.current);
+    if (n) { pendingJump.current = null; flyTo(n); }
+  }, [sceneVersion]);
+
+  const selectNode = (n: GNode) => { selectedRef.current = n; setSelected(n); setHover(n); };
+  useEffect(() => {
+    let closed = false;
+    setSummary(''); setSummaryError(false);
+    if (selected?.kind === 'note') api.read(selected.id).then(r => {
+      if (!closed) setSummary(r.content.replace(/^---[\s\S]*?---\s*/, '').replace(/[#*`>]/g, '').trim().slice(0, 280) || 'This note is empty.');
+    }).catch(() => { if (!closed) setSummaryError(true); });
+    return () => { closed = true; };
+  }, [selected?.id]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (mod.current) {
+          tickerState.current = { system: mod.current.Ticker.system.started, shared: mod.current.Ticker.shared.started };
+          mod.current.Ticker.system.stop(); mod.current.Ticker.shared.stop();
+        }
+        simRef.current?.stop();
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = undefined;
+        flyNode.current = null; flight.current = null;
+      } else {
+        if (mod.current && tickerState.current) {
+          if (tickerState.current.system) mod.current.Ticker.system.start();
+          if (tickerState.current.shared) mod.current.Ticker.shared.start();
+          tickerState.current = null;
+        }
+        if (!reducedMotion() && (simRef.current?.alpha() ?? 0) > .005) simRef.current?.restart();
+        scheduleRender(true);
+      }
+    };
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onMotion = () => { if (mq.matches) simRef.current?.stop(); scheduleRender(true); };
+    document.addEventListener('visibilitychange', onVisibility);
+    mq.addEventListener('change', onMotion);
+    return () => { document.removeEventListener('visibilitychange', onVisibility); mq.removeEventListener('change', onMotion); };
+  }, []);
+  useEffect(() => { edgesDirty.current = true; scheduleRender(false); }, [selected]);
+  const folderCounts = new Map<string, number>();
+  for (const n of rawRef.current?.nodes ?? []) if (n.kind === 'note') { const f = folderOf(n.id); folderCounts.set(f, (folderCounts.get(f) ?? 0) + 1); }
+  const related = selected ? (rawRef.current?.edges ?? []).filter(e => e.target === selected.id || e.source === selected.id).map(e => e.source === selected.id ? e.target : e.source) : [];
 
   return (
     <div className="graph-view">
       <div className="graph-canvas-wrap" ref={wrapRef}>
         <canvas
           ref={canvasRef}
-          style={{ cursor: 'grab', position: 'absolute', inset: 0 }}
-          onMouseDown={onDown}
-          onMouseMove={onMove}
-          onMouseUp={onUp}
-          onMouseLeave={() => {
-            drag.current = null;
+          style={{ cursor: 'grab', position: 'absolute', inset: 0, touchAction: 'none' }}
+          aria-label="Knowledge graph. Search or use the folder list to explore notes."
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerLeave={() => { if (!drag.current) { canvasRef.current!.style.transform = ''; setHover(null); } }}
+          onPointerCancel={() => {
+            pointers.current.clear(); pinch.current = null; drag.current = null;
             setHover(null);
           }}
         />
@@ -1028,8 +1161,21 @@ export default function GraphView() {
           )}
         </div>
 
+        <nav className="graph-folders" aria-label="Graph folders">
+          <button onClick={() => setCollapsed(v => !v)} aria-pressed={!collapsed}>{collapsed ? 'Expand all' : 'Group folders'}</button>
+          {[...folderCounts].map(([f, count]) => <button key={f} aria-pressed={!collapsed || expanded.has(f)} onClick={() => setExpanded(prev => { const next = new Set(prev); if (next.has(f)) next.delete(f); else next.add(f); return next; })}>{f || 'Root'} <span>{count}</span></button>)}
+        </nav>
+        {selected && <aside className="graph-detail" aria-label="Selected note">
+          <div className="graph-detail-head"><h3>{selected.label}</h3><button aria-label="Close note details" onClick={() => { selectedRef.current = null; setSelected(null); setHover(null); }}>×</button></div>
+          <p className="graph-detail-path">{selected.id}</p>
+          <button className="btn" onClick={() => openFile(selected.id)}>Open note</button>
+          <p>{summaryError ? 'Summary unavailable. You can still open this note.' : summary || 'Loading summary…'}</p>
+          <div className="graph-detail-tags">{selected.tags.map(tag => <button key={tag} onClick={() => searchFor('tag:' + tag)}>#{tag}</button>)}</div>
+          <h4>Linked notes · {new Set(related).size}</h4>
+          <div className="graph-detail-links">{[...new Set(related)].slice(0, 40).map(id => <button key={id} onClick={() => openFile(id)}>{id.replace(/\.md$/, '')}</button>)}</div>
+        </aside>}
         <div className="graph-hint">
-          {stats.shown} / {stats.total} notes · {stats.orphans} orphans · scroll to zoom · drag to pan · click a tag to search
+          {stats.shown} / {stats.total} notes · {stats.orphans} orphans · scroll to zoom · drag to pan · select a note for details
         </div>
 
         {buildError && (

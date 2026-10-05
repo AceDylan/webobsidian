@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { useStore, GRAPH_PATH, type ContextMenuItem } from '../lib/store';
 import { api } from '../lib/api';
 import Editor from './Editor';
@@ -288,6 +289,21 @@ export default function Workspace() {
     }
   };
 
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = tabsRef.current, indicator = indicatorRef.current;
+    if (!el || !indicator) return;
+    const place = () => {
+      const active = el.querySelector<HTMLElement>('.tab.active');
+      indicator.hidden = !active;
+      if (active) { indicator.style.width = active.offsetWidth + 'px'; indicator.style.transform = `translateX(${active.offsetLeft}px)`; }
+    };
+    place();
+    const ro = new ResizeObserver(place); ro.observe(el);
+    return () => ro.disconnect();
+  }, [activePath, tabs.length]);
+
   return (
     <div className="workspace" onPaste={onPaste} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
       <div className="tab-bar">
@@ -298,7 +314,8 @@ export default function Workspace() {
         >
           <Icon name={isMobile ? 'menu' : 'panel-left'} size={isMobile ? 20 : 16} />
         </span>
-        <div className="tab-scroll">
+        <div className="tab-scroll" ref={tabsRef}>
+          <span className="halo-tab-indicator" ref={indicatorRef} aria-hidden="true" />
           {tabs.map((t) => (
             <div
               key={t.path}
