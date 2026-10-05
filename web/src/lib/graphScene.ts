@@ -1,3 +1,5 @@
+import { t } from './i18n';
+
 export type SceneKind = 'note' | 'attachment' | 'unresolved' | 'tag' | 'folder' | 'vault';
 export interface SceneNode { id: string; label: string; kind: SceneKind; tags: string[]; deg: number; count?: number }
 export interface SceneEdge { source: string; target: string; hierarchy?: boolean }
@@ -12,8 +14,8 @@ export function aggregateGraph(nodes: SceneNode[], edges: SceneEdge[], collapsed
   for (const n of notes) { const f = folderOf(n.id); folders.set(f, (folders.get(f) ?? 0) + 1); }
   const visible = nodes.filter(n => n.kind !== 'note' || !collapsed || expanded.has(folderOf(n.id)));
   const result: SceneNode[] = [
-    { id: VAULT_ID, label: 'Vault', kind: 'vault', tags: [], deg: notes.length, count: notes.length },
-    ...[...folders].map(([f, count]) => ({ id: folderId(f), label: f || 'Root', kind: 'folder' as const, tags: [], deg: count, count })),
+    { id: VAULT_ID, label: t('Vault'), kind: 'vault', tags: [], deg: notes.length, count: notes.length },
+    ...[...folders].map(([f, count]) => ({ id: folderId(f), label: f || t('Root'), kind: 'folder' as const, tags: [], deg: count, count })),
     ...visible,
   ];
   const ids = new Set(result.map(n => n.id));

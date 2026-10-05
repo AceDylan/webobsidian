@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import Icon from './Icon';
 import { aggregateGraph, folderOf, type SceneKind } from '../lib/graphScene';
 import { reducedMotion, spring } from '../lib/haloMotion';
+import { t } from '../lib/i18n';
 import {
   forceSimulation,
   forceManyBody,
@@ -1055,7 +1056,8 @@ export default function GraphView() {
         const f = n.id.slice('\u0000halo:folder:'.length);
         setExpanded(prev => { const next = new Set(prev); if (next.has(f)) next.delete(f); else next.add(f); return next; });
       } else if (n.kind === 'vault') { setCollapsed(v => !v); }
-      else if (n.kind === 'note') selectNode(n);
+      // First click shows the details card; clicking the selected note again opens it.
+      else if (n.kind === 'note') { if (selectedRef.current?.id === n.id) openFile(n.id); else selectNode(n); }
       else if (n.kind === 'tag') searchFor(`tag:${n.id.slice(4)}`);
     }
   };
@@ -1072,7 +1074,7 @@ export default function GraphView() {
     let closed = false;
     setSummary(''); setSummaryError(false);
     if (selected?.kind === 'note') api.read(selected.id).then(r => {
-      if (!closed) setSummary(r.content.replace(/^---[\s\S]*?---\s*/, '').replace(/[#*`>]/g, '').trim().slice(0, 280) || 'This note is empty.');
+      if (!closed) setSummary(r.content.replace(/^---[\s\S]*?---\s*/, '').replace(/[#*`>]/g, '').trim().slice(0, 280) || t('This note is empty.'));
     }).catch(() => { if (!closed) setSummaryError(true); });
     return () => { closed = true; };
   }, [selected?.id]);
@@ -1161,21 +1163,24 @@ export default function GraphView() {
           )}
         </div>
 
-        <nav className="graph-folders" aria-label="Graph folders">
-          <button onClick={() => setCollapsed(v => !v)} aria-pressed={!collapsed}>{collapsed ? 'Expand all' : 'Group folders'}</button>
-          {[...folderCounts].map(([f, count]) => <button key={f} aria-pressed={!collapsed || expanded.has(f)} onClick={() => setExpanded(prev => { const next = new Set(prev); if (next.has(f)) next.delete(f); else next.add(f); return next; })}>{f || 'Root'} <span>{count}</span></button>)}
+        <nav className="graph-folders" aria-label={t('Graph folders')}>
+          <button onClick={() => setCollapsed(v => !v)} aria-pressed={!collapsed}>{collapsed ? t('Expand all') : t('Group folders')}</button>
+          {[...folderCounts].map(([f, count]) => <button key={f} aria-pressed={!collapsed || expanded.has(f)} onClick={() => setExpanded(prev => { const next = new Set(prev); if (next.has(f)) next.delete(f); else next.add(f); return next; })}>{f || t('Root')} <span>{count}</span></button>)}
         </nav>
-        {selected && <aside className="graph-detail" aria-label="Selected note">
-          <div className="graph-detail-head"><h3>{selected.label}</h3><button aria-label="Close note details" onClick={() => { selectedRef.current = null; setSelected(null); setHover(null); }}>×</button></div>
+        {selected && <aside className="graph-detail" aria-label={t('Selected note')}>
+          <div className="graph-detail-head"><h3>{selected.label}</h3><button aria-label={t('Close note details')} onClick={() => { selectedRef.current = null; setSelected(null); setHover(null); }}>×</button></div>
           <p className="graph-detail-path">{selected.id}</p>
-          <button className="btn" onClick={() => openFile(selected.id)}>Open note</button>
-          <p>{summaryError ? 'Summary unavailable. You can still open this note.' : summary || 'Loading summary…'}</p>
+          <button className="btn" onClick={() => openFile(selected.id)}>{t('Open note')}</button>
+          <p>{summaryError ? t('Summary unavailable. You can still open this note.') : summary || t('Loading summary…')}</p>
           <div className="graph-detail-tags">{selected.tags.map(tag => <button key={tag} onClick={() => searchFor('tag:' + tag)}>#{tag}</button>)}</div>
-          <h4>Linked notes · {new Set(related).size}</h4>
+          <h4>{t('Linked notes · {n}', { n: new Set(related).size })}</h4>
           <div className="graph-detail-links">{[...new Set(related)].slice(0, 40).map(id => <button key={id} onClick={() => openFile(id)}>{id.replace(/\.md$/, '')}</button>)}</div>
         </aside>}
         <div className="graph-hint">
-          {stats.shown} / {stats.total} notes · {stats.orphans} orphans · scroll to zoom · drag to pan · select a note for details
+          {collapsed && stats.shown === 0
+            ? t('{total} notes in {folders} folders · click a folder to expand', { total: stats.total, folders: folderCounts.size })
+            : t('{shown} / {total} notes · {orphans} orphans', stats)}
+          {' · '}{t('scroll to zoom · drag to pan · select a note for details')}
         </div>
 
         {buildError && (
