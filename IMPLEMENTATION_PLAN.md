@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic + sci-fi layer, PRD 1.9)
+Cập nhật lần cuối: 2026-10-06 (Phase 31 — Graph 星图 galaxy mode, PRD 2.0)
 
 ---
 
@@ -482,6 +482,7 @@ Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic + sci-fi laye
       origin Hub, kẹp 0–4000) ⇒ thanh lấy giá trị lớn hơn. Test `web/test/hub-keyboard.test.ts`.
 
 ### Nhật ký tiến độ
+- 2026-10-06 (Phase 31): tab graph thêm chế độ 星图 (Canvas 2D tự viết: lõi lưới, sứa theo thư mục gốc, cung hạt sáng, danh sách + sợi quạt, thẻ chi tiết; điện thoại dùng chip hai bên + bottom sheet). 关系图 giữ nguyên. Typecheck sạch, test web 32/32, build web OK, Playwright 56/56 trên vault thật (desktop/mid/phone/reduced-motion, chặn mọi request ghi).
 - 2026-10-05 (Phase 30, M30.5): lớp sci-fi cho graph (sao, xung sáng, vòng HUD, khung ngắm) + viền neon theme Halo. Typecheck sạch, test web 25/25, Playwright 56/56 (desktop/mobile × dark/light × reduced/normal).
 - 2026-10-01 (Phase 29, M29.5 + M29.9): dịch Settings/dialog/format toolbar; Hub mở note ngay trong frame (không đăng
   nhập lại). Typecheck sạch, test web 17/17, test server 24/24, build web OK.
@@ -1357,3 +1358,10 @@ Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic + sci-fi laye
 - Begin Phase 30 following explicit user authorization to resume the three-service redesign.
 
 - Validation 2026-10-05: `npm run typecheck` passed; graph scene/theme tests 8 passed; Playwright 8 desktop/mobile × dark/light × reduced/normal contexts, 56 checks passed. StrictMode canceled-frame cleanup verified; hidden Pixi tickers stop; user vault content unchanged. CI/deployment pending.
+
+## Phase 31 — Graph 星图 galaxy mode (PRD 2.0, theo yêu cầu người dùng)
+- [x] M31.1 `graphMode` persisted switch 「星图 / 关系图」 in the graph tab; Pixi graph unchanged.
+- [x] M31.2 Galaxy model (`web/src/lib/galaxyModel.ts`): top-level folders incl. empty, colours, merged 「其他」, note specks, mutual links, layout; unit tests.
+- [x] M31.3 Galaxy engine (`web/src/lib/galaxyEngine.ts`): core, jellyfish hubs, arcs, particles, branch fibres; reduced-motion/hidden-tab guards.
+- [x] M31.4 `GalaxyView`: glass cards, branch list, note detail, search, phone sheets; zh-CN strings.
+- [x] M31.5 Typecheck, tests, browser checks desktop/phone, CI deploy.

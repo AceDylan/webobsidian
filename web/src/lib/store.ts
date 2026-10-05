@@ -26,6 +26,8 @@ export interface GraphGroup {
   color: string;
 }
 
+export type GraphMode = 'galaxy' | 'graph';
+
 /** Persisted Graph view filters/display/forces — mirrors Obsidian's graph panel. */
 export interface GraphSettings {
   // filters
@@ -168,6 +170,9 @@ interface AppState {
   setGraph: (v: boolean) => void;
   openGraph: () => Promise<void>;
   graphSettings: GraphSettings;
+  /** Graph tab mode: 星图 galaxy (default) or the Obsidian-style 关系图 (PRD 2.0). */
+  graphMode: GraphMode;
+  setGraphMode: (m: GraphMode) => void;
   setGraphSettings: (patch: Partial<GraphSettings>) => void;
   resetGraphSettings: () => void;
 
@@ -220,7 +225,7 @@ const TEXT_RE = /\.(md|markdown|txt|json|csv|canvas|css|js|ya?ml)$/i;
 // ---- server-side workspace persistence (shared across browsers/devices) ----
 const PERSIST_KEYS = [
   'tabs', 'activePath', 'viewMode', 'expanded', 'splitPath', 'splitDirection',
-  'recent', 'bookmarks', 'leftPanel', 'rightPanel', 'leftOpen', 'rightOpen', 'graphSettings',
+  'recent', 'bookmarks', 'leftPanel', 'rightPanel', 'leftOpen', 'rightOpen', 'graphSettings', 'graphMode',
   'treeSort', 'autoReveal',
 ] as const;
 
@@ -266,6 +271,7 @@ function applyPersisted(s: any, set: (p: any) => void): void {
     leftOpen: s.leftOpen !== false,
     rightOpen: s.rightOpen !== false,
     graphSettings: migrateGraphSettings(s.graphSettings),
+    graphMode: s.graphMode === 'graph' ? 'graph' : 'galaxy',
   });
 }
 
@@ -433,6 +439,8 @@ export const useStore = create<AppState>()(
         }));
       },
       graphSettings: DEFAULT_GRAPH_SETTINGS,
+      graphMode: 'galaxy',
+      setGraphMode: (graphMode) => set({ graphMode }),
       setGraphSettings: (patch) =>
         set((s) => ({ graphSettings: { ...s.graphSettings, ...patch } })),
       resetGraphSettings: () => set({ graphSettings: DEFAULT_GRAPH_SETTINGS }),

@@ -3,7 +3,7 @@ import { useStore, GRAPH_PATH, type ContextMenuItem } from '../lib/store';
 import { api } from '../lib/api';
 import Editor from './Editor';
 import Preview from './Preview';
-import GraphView from './GraphView';
+import GraphTab from './GraphTab';
 import CanvasView from './CanvasView';
 import FolderView from './FolderView';
 import { isFolderPath } from '../lib/tree';
@@ -420,7 +420,7 @@ export default function Workspace() {
         {!activePath && <EmptyWorkspace isMobile={isMobile} />}
         {activePath === GRAPH_PATH && (
           <div className="pane main-pane">
-            <GraphView />
+            <GraphTab />
           </div>
         )}
         {activePath && activePath !== GRAPH_PATH && activeIsFolder && (

@@ -6,6 +6,7 @@ import { aggregateGraph, folderOf, type SceneKind } from '../lib/graphScene';
 import { reducedMotion, spring } from '../lib/haloMotion';
 import { linkPoint, mountStarfield, pulseT } from '../lib/graphFx';
 import { t } from '../lib/i18n';
+import { deliverScreenshot } from '../lib/canvasShot';
 import {
   forceSimulation,
   forceManyBody,
@@ -737,19 +738,7 @@ export default function GraphView() {
         ctx.fillStyle = '#090c14';
         ctx.fillRect(0, 0, out.width, out.height);
         ctx.drawImage(src, 0, 0);
-        const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'));
-        if (!blob) throw new Error('toBlob failed');
-        if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          useStore.getState().notify('Graph screenshot copied');
-        } else {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'graph.png';
-          a.click();
-          URL.revokeObjectURL(a.href);
-          useStore.getState().notify('Graph screenshot downloaded');
-        }
+        await deliverScreenshot(out, 'graph.png');
       } catch {
         useStore.getState().notify('Screenshot failed');
       }
