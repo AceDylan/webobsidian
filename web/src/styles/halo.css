@@ -33,8 +33,8 @@
   --shadow: 0 18px 50px -18px #1c28532b, 0 2px 5px #1c285310;
 }
 .halo-theme :is(h1,h2,h3,.tab .title,.login-card .title) { font-family: 'Mona Sans', var(--font-ui); letter-spacing: -.022em; }
-.halo-theme :is(.settings-modal,.palette,.context-menu,.login-card) { box-shadow: var(--shadow); border-radius: 16px; }
-:is(.palette,.context-menu,.settings-modal,.share-dialog,.version-history,.folder-picker) { animation: halo-overlay var(--dur-std) var(--spring-smooth) both; transform-origin: top center; }
+.halo-theme :is(.settings-modal,.modal,.palette,.context-menu,.login-card) { box-shadow: var(--shadow); border-radius: 16px; }
+:is(.modal-bg > .modal,.palette,.context-menu,.settings-modal,.share-dialog,.version-history,.folder-picker) { animation: halo-overlay var(--dur-std) var(--spring-smooth) both; transform-origin: top center; }
 .context-menu { transform-origin: top left; }
 @keyframes halo-overlay { from { opacity: 0; transform: translateY(6px) scale(.975); } to { opacity: 1; transform: none; } }
 @keyframes halo-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -69,7 +69,7 @@
 .motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; }
-  :is(.palette,.context-menu,.settings-modal,.share-dialog,.version-history,.folder-picker,.graph-detail), .halo-enter :is(.ribbon,.tab-bar,.sidebar-header) { animation: halo-fade 120ms ease-out both; transform: none; }
+  :is(.modal-bg > .modal,.palette,.context-menu,.settings-modal,.share-dialog,.version-history,.folder-picker,.graph-detail), .halo-enter :is(.ribbon,.tab-bar,.sidebar-header) { animation: halo-fade 120ms ease-out both; transform: none; }
 }
 
 .graph-canvas-wrap canvas { transition: transform 160ms var(--spring-snappy); }
