@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.8 · Cập nhật: 2026-10-05 · Trạng thái: Draft
+> Phiên bản: 1.9 · Cập nhật: 2026-10-05 · Trạng thái: Draft
+> Changelog 1.9 (theo yêu cầu người dùng — "科幻感、电影感、炫酷"): graph thêm lớp sci-fi — nền sao chuyển động (canvas riêng), xung sáng chạy dọc các liên kết, vòng HUD quay quanh lõi vault, khung ngắm quanh note đang hover/chọn; theme Halo thêm viền neon cho tab/overlay. Tắt hoàn toàn khi reduced-motion hoặc tab ẩn; điện thoại giới hạn 50 xung. Không đổi dữ liệu, API hay auth.
 > Changelog 1.8 (theo yêu cầu người dùng — Halo cinematic): thêm Halo System/Dark/Light, giữ Obsidian; trong Hub, system dùng Halo. Motion tokens dùng chung với HaloWebUI/Hub; thao tác thường ≤240ms, camera ≤560ms, reduced-motion và tab ẩn tắt chuyển động. Graph luôn là cảnh đêm: dữ liệu note/link thật, đường Bézier, thư mục gom/mở, camera spring, thông tin note và backlinks; mobile không glow/star/parallax. Không thay nội dung vault hay API auth.
 > Changelog 1.7 (trải nghiệm khi nhúng trong Bookmark Hub, theo yêu cầu người dùng): `ui.theme` thêm giá trị
 > `system` (mặc định mới) — theo sáng/tối của thiết bị; trong iframe của Hub thì theo sáng/tối **của Hub** (Hub gửi
@@ -572,3 +573,5 @@ GET    /api/v1/tags
 - Theme: `halo-system`, `halo-dark`, `halo-light`; `system` preserves Obsidian standalone and uses Halo in Hub. Existing explicit Obsidian choices remain. Mona Sans is self-hosted. No runtime settings migration.
 - Daily motion: menus/dialogs and tab indicator only; never animate live editor text or streaming responses. Shared spring tokens, reduced-motion fade, no rendering in hidden tabs.
 - Graph: always ink night; actual backlinks rendered as thin Bézier curves. Vault core and folder satellites show real counts; selecting a folder expands its notes. Selection opens an opaque accessible detail card with summary, tags and backlinks; opening requires the Open button. Search flies to the result within 560ms and manual input interrupts. Mobile uses nodes/curves only; decorations are bounded and desktop only.
+
+- Sci-fi layer (1.9): graph draws a drifting starfield behind the scene, light pulses along links (≤140 desktop, ≤50 phone, golden-ratio staggered), three counter-rotating HUD rings round the vault core and a lock-on reticle round the hovered/selected note; Halo theme adds a neon tab indicator and cold-lit overlays. Reduced motion → one still frame, no pulses/rings; hidden tab → nothing drawn.

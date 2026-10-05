@@ -61,10 +61,11 @@
 .graph-detail-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 .graph-detail-links { display: grid; gap: 4px; margin-bottom: 16px; }
 .graph-detail-links button { text-align: left; white-space: normal; overflow-wrap: anywhere; }
-@media (min-width: 769px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .graph-canvas-wrap::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .26; background-image: radial-gradient(circle at 14% 22%, #aabddd 0 1px, transparent 1.5px), radial-gradient(circle at 77% 18%, #ae9cd1 0 1px, transparent 1.5px), radial-gradient(circle at 83% 76%, #aa957d 0 1px, transparent 1.5px), radial-gradient(circle at 26% 83%, #aabddd 0 1px, transparent 1.5px); animation: halo-dust 32s ease-in-out infinite alternate; }
-  @keyframes halo-dust { to { transform: translate3d(3px,-4px,0); } }
-}
+/* Deep-space starfield behind the Pixi scene (lib/graphFx.ts mountStarfield). */
+.graph-stars { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.graph-canvas-wrap::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(45% 40% at 50% 48%, rgb(94 231 255 / .07), transparent 70%), radial-gradient(40% 35% at 70% 30%, rgb(167 139 250 / .07), transparent 70%),
+    repeating-linear-gradient(to bottom, rgb(255 255 255 / .018) 0 1px, transparent 1px 3px); }
 @media (max-width: 768px) { .graph-detail { top: auto; bottom: 88px; max-height: 42%; padding: 14px; } .graph-hint { font-size: 10px; } }
 .motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) {
@@ -74,3 +75,14 @@
 
 .graph-canvas-wrap canvas { transition: transform 160ms var(--spring-snappy); }
 @media (prefers-reduced-motion: reduce), (pointer: coarse) { .graph-canvas-wrap canvas { transform: none !important; transition: none; } }
+
+/* Sci-fi chrome for the Halo theme: neon tab indicator, cold-lit overlays, glowing ribbon. Reading surfaces stay calm. */
+.halo-theme { --sf-cyan: #0891b2; --sf-violet: #7c3aed; --sf-glow: rgb(8 145 178 / .22); --sf-line: rgb(8 145 178 / .18); }
+.halo-theme.theme-dark { --sf-cyan: #5ee7ff; --sf-violet: #a78bfa; --sf-glow: rgb(94 231 255 / .32); --sf-line: rgb(94 231 255 / .16); }
+.halo-theme .halo-tab-indicator { background: linear-gradient(90deg, var(--sf-cyan), var(--sf-violet)); box-shadow: 0 0 10px var(--sf-glow); height: 2px; }
+.halo-theme :is(.palette, .settings-modal, .modal-bg > .modal, .context-menu) { box-shadow: 0 0 0 1px var(--sf-line), 0 24px 70px -24px var(--sf-glow), var(--shadow); }
+.halo-theme.theme-dark .ribbon :is(.active, [aria-pressed='true']) { color: var(--sf-cyan); filter: drop-shadow(0 0 6px var(--sf-glow)); }
+.halo-theme.theme-dark .login-card { box-shadow: 0 0 0 1px var(--sf-line), 0 0 80px -20px var(--sf-glow), var(--shadow); }
+.halo-theme ::selection { background: rgb(94 231 255 / .28); }
+.graph-folders button[aria-pressed=true] { box-shadow: 0 0 14px -2px rgb(94 231 255 / .45); border-color: #5ee7ff; }
+.graph-detail { box-shadow: 0 0 0 1px rgb(94 231 255 / .18), 0 0 60px -16px rgb(94 231 255 / .35), 0 20px 64px #0006; }

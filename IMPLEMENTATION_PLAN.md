@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic, PRD 1.8)
+Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic + sci-fi layer, PRD 1.9)
 
 ---
 
@@ -482,6 +482,7 @@ Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic, PRD 1.8)
       origin Hub, kẹp 0–4000) ⇒ thanh lấy giá trị lớn hơn. Test `web/test/hub-keyboard.test.ts`.
 
 ### Nhật ký tiến độ
+- 2026-10-05 (Phase 30, M30.5): lớp sci-fi cho graph (sao, xung sáng, vòng HUD, khung ngắm) + viền neon theme Halo. Typecheck sạch, test web 25/25, Playwright 56/56 (desktop/mobile × dark/light × reduced/normal).
 - 2026-10-01 (Phase 29, M29.5 + M29.9): dịch Settings/dialog/format toolbar; Hub mở note ngay trong frame (không đăng
   nhập lại). Typecheck sạch, test web 17/17, test server 24/24, build web OK.
 - 2026-10-01 (Phase 29, M29.10): thanh định dạng trên điện thoại nằm trên bàn phím cả khi nhúng trong Hub. Typecheck
@@ -1349,7 +1350,8 @@ Cập nhật lần cuối: 2026-10-05 (Phase 30 — Halo cinematic, PRD 1.8)
 - [x] M30.1 Shared spring tokens, Halo System/Dark/Light, self-hosted Mona Sans, embedded default.
 - [x] M30.2 Night graph, folder aggregation, Bézier relations, selection detail, spring search camera, visibility/mobile/reduced-motion guards.
 - [x] M30.3 Daily overlays/tab indicator and trusted Hub enter message.
-- [~] M30.4 Typecheck, browser desktop/mobile/light/dark/reduced-motion checks, CI deployment and rollback receipt.
+- [x] M30.4 Typecheck, browser desktop/mobile/light/dark/reduced-motion checks, CI deployment and rollback receipt.
+- [x] M30.5 Sci-fi layer (PRD 1.9): graph starfield, link pulses, HUD rings round the vault core, lock-on reticle; neon tab indicator/overlays in Halo theme.
 
 ### 2026-10-05
 - Begin Phase 30 following explicit user authorization to resume the three-service redesign.

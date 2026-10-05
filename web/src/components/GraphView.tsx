@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import Icon from './Icon';
 import { aggregateGraph, folderOf, type SceneKind } from '../lib/graphScene';
 import { reducedMotion, spring } from '../lib/haloMotion';
+import { linkPoint, mountStarfield, pulseT } from '../lib/graphFx';
 import { t } from '../lib/i18n';
 import {
   forceSimulation,
@@ -59,6 +60,7 @@ interface PixiCtx {
   world: Container;
   edges: Graphics;
   glows: Graphics;
+  fx: Graphics;
   labelBg: Graphics;
   arrows: Graphics;
   nodeLayer: Container;
@@ -123,6 +125,7 @@ export default function GraphView() {
   const simRef = useRef<Simulation<GNode, GLink> | null>(null);
   const nodesRef = useRef<GNode[]>([]);
   const linksRef = useRef<GLink[]>([]);
+  const starsRef = useRef<HTMLCanvasElement>(null);
   const rawRef = useRef<RawGraph | null>(null);
   const pixi = useRef<PixiCtx | null>(null);
   const mod = useRef<typeof import('pixi.js') | null>(null);
@@ -328,6 +331,7 @@ export default function GraphView() {
     }
     if (fading) applyNodeAlphas();
     fullDirty.current = false;
+    const ambient = drawFx();
     updateLabels();
     p.app.render();
     // debug/testing hook: expose the live camera (used by automated UI checks)
@@ -339,7 +343,57 @@ export default function GraphView() {
       target: zoomTarget.current,
       dev: devScale(k),
     };
-    if (zooming || fading) scheduleRender(false);
+    if (zooming || fading || ambient) scheduleRender(false);
+  };
+
+  // Sci-fi layer (redrawn every frame while the graph is visible; off for reduced motion):
+  // light pulses running along the links, HUD rings turning round the vault core and a
+  // lock-on reticle round the hovered / selected note. Returns whether it wants another frame.
+  const drawFx = (): boolean => {
+    const p = pixi.current;
+    if (!p) return false;
+    p.fx.clear();
+    const nodes = nodesRef.current;
+    if (!nodes.length || document.hidden || reducedMotion()) return false;
+    const s = sref.current;
+    const k = cam.current.k || 1;
+    const now = performance.now();
+    const links = linksRef.current;
+    const max = window.matchMedia('(max-width: 768px)').matches ? 50 : 140;
+    const step = Math.max(1, Math.ceil(links.length / max));
+    const r = 2.2 / k;
+    for (let i = 0; i < links.length; i += step) {
+      const l = links[i];
+      const a = l.source as GNode, b = l.target as GNode;
+      const [x, y] = linkPoint(a.x ?? 0, a.y ?? 0, b.x ?? 0, b.y ?? 0, pulseT(i, now, l.hierarchy ? 2600 : 1700));
+      const c = l.hierarchy ? 0xa78bfa : 0x5ee7ff;
+      p.fx.circle(x, y, r * 2.8).fill({ color: c, alpha: 0.13 });
+      p.fx.circle(x, y, r).fill({ color: c, alpha: 0.9 });
+    }
+    const arcs = (cx: number, cy: number, R: number, turn: number, parts: number, fill: number, color: number, width: number, alpha: number) => {
+      const seg = (Math.PI * 2) / parts;
+      for (let j = 0; j < parts; j++) {
+        const a0 = turn + j * seg, a1 = a0 + seg * fill;
+        p.fx.moveTo(cx + Math.cos(a0) * R, cy + Math.sin(a0) * R);
+        p.fx.arc(cx, cy, R, a0, a1);
+      }
+      p.fx.stroke({ width, color, alpha });
+    };
+    const core = nodes.find((n) => n.kind === 'vault');
+    if (core) {
+      const R = Math.max(16, screenRadius(core, s, k)) / k;   // rings read even when the core is drawn small
+      const cx = core.x ?? 0, cy = core.y ?? 0;
+      p.fx.circle(cx, cy, R * 1.6).fill({ color: 0x5ee7ff, alpha: 0.05 });
+      arcs(cx, cy, R * 2.1, now / 2600, 3, 0.22, 0x5ee7ff, 2.2 / k, 0.9);
+      arcs(cx, cy, R * 2.8, -now / 4200, 24, 0.45, 0xa78bfa, 1.3 / k, 0.6);
+      arcs(cx, cy, R * 3.7, now / 9000, 72, 0.2, 0x5ee7ff, 1 / k, 0.4);
+    }
+    const h = hover.current ?? selectedRef.current;
+    if (h && h.kind !== 'vault') {
+      const R = (screenRadius(h, s, k) + 9) / k;
+      arcs(h.x ?? 0, h.y ?? 0, R, now / 900, 4, 0.16, 0x5ee7ff, 1.6 / k, 0.95);
+    }
+    return true;
   };
 
   const updatePositions = () => {
@@ -632,6 +686,7 @@ export default function GraphView() {
       const world = new PIXI.Container();
       const edges = new PIXI.Graphics();
       const glows = new PIXI.Graphics();
+      const fx = new PIXI.Graphics();
       const labelBg = new PIXI.Graphics();
       const arrows = new PIXI.Graphics();
       const nodeLayer = new PIXI.Container();
@@ -639,6 +694,7 @@ export default function GraphView() {
       world.addChild(glows);
       world.addChild(edges);
       world.addChild(arrows);
+      world.addChild(fx);
       world.addChild(nodeLayer);
       app.stage.addChild(world);
       app.stage.addChild(labelBg);
@@ -648,7 +704,7 @@ export default function GraphView() {
       const tex = app.renderer.generateTexture({ target: cg, resolution: 2, antialias: true });
       cg.destroy();
 
-      pixi.current = { app, world, edges, glows, labelBg, arrows, nodeLayer, labelLayer, tex, sprites: new Map(), labels: [], cols: getCols() };
+      pixi.current = { app, world, edges, glows, fx, labelBg, arrows, nodeLayer, labelLayer, tex, sprites: new Map(), labels: [], cols: getCols() };
       buildScene(); // builds from current data (or nothing yet)
       if (document.hidden) { PIXI.Ticker.system.stop(); PIXI.Ticker.shared.stop(); }
     })().catch(() => { if (!destroyed) setBuildError('Graph renderer is unavailable on this device. Notes remain accessible from the file list.'); });
@@ -1107,6 +1163,7 @@ export default function GraphView() {
     return () => { document.removeEventListener('visibilitychange', onVisibility); mq.removeEventListener('change', onMotion); };
   }, []);
   useEffect(() => { edgesDirty.current = true; scheduleRender(false); }, [selected]);
+  useEffect(() => (starsRef.current ? mountStarfield(starsRef.current, reducedMotion) : undefined), []);
   const folderCounts = new Map<string, number>();
   for (const n of rawRef.current?.nodes ?? []) if (n.kind === 'note') { const f = folderOf(n.id); folderCounts.set(f, (folderCounts.get(f) ?? 0) + 1); }
   const related = selected ? (rawRef.current?.edges ?? []).filter(e => e.target === selected.id || e.source === selected.id).map(e => e.source === selected.id ? e.target : e.source) : [];
@@ -1114,6 +1171,7 @@ export default function GraphView() {
   return (
     <div className="graph-view">
       <div className="graph-canvas-wrap" ref={wrapRef}>
+        <canvas ref={starsRef} className="graph-stars" aria-hidden="true" />
         <canvas
           ref={canvasRef}
           style={{ cursor: 'grab', position: 'absolute', inset: 0, touchAction: 'none' }}
