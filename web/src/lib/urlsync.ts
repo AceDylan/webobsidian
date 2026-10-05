@@ -49,7 +49,7 @@ export function initUrlSync(): string | null {
   useStore.subscribe((state, prev) => {
     if (state.activePath === prev.activePath) return;
     const url = pathToUrl(state.activePath);
-    if (window.location.pathname === url) return;
+    if (window.location.pathname === url) { firstSync = false; return; }
     if (applyingPop || firstSync || framed) window.history.replaceState(null, '', url);
     else window.history.pushState(null, '', url);
     firstSync = false;

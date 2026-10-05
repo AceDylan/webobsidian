@@ -5,6 +5,7 @@ import { outline } from '../lib/markdown';
 import TagsPanel from './TagsPanel';
 import Icon from './Icon';
 import { t } from '../lib/i18n';
+import ChromeLabel from './ChromeLabel';
 
 const MD_RE = /\.(md|markdown)$/i;
 const name = (p: string) => p.split('/').pop()?.replace(MD_RE, '') ?? p;
@@ -94,6 +95,7 @@ function BacklinksPanel() {
       <div className="nav-header">
         <span className="nav-title">
           {activePath && MD_RE.test(activePath) ? t('Backlinks for {name}', { name: name(activePath) }) : t('Backlinks')}
+          <ChromeLabel english="Backlinks" chinese="反向链接" />
         </span>
       </div>
       <div className="sidebar-body">
@@ -184,6 +186,7 @@ function OutgoingPanel() {
       <div className="nav-header">
         <span className="nav-title">
           {activePath && MD_RE.test(activePath) ? t('Outgoing links from {name}', { name: name(activePath) }) : t('Outgoing links')}
+          <ChromeLabel english="Outgoing links" chinese="出链" />
         </span>
       </div>
       <div className="sidebar-body">
@@ -221,7 +224,7 @@ function OutlinePanel() {
   return (
     <>
       <div className="nav-header">
-        <span className="nav-title">{t('Outline')}</span>
+        <span className="nav-title">{t('Outline')}<ChromeLabel english="Outline" chinese="大纲" /></span>
       </div>
       <div className="sidebar-body">
         {heads.length === 0 && <div className="panel-item">{t('No headings')}</div>}
@@ -258,7 +261,7 @@ export default function RightSidebar() {
       {rightPanel === 'tags' && (
         <>
           <div className="nav-header">
-            <span className="nav-title">{t('Tags')}</span>
+            <span className="nav-title">{t('Tags')}<ChromeLabel english="Tags" chinese="标签" /></span>
           </div>
           <div className="sidebar-body">
             <TagsPanel />

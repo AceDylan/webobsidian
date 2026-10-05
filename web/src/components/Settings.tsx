@@ -403,6 +403,7 @@ function Appearance({ s }: { s: any }) {
       <h2>{t('Appearance')}</h2>
       <Row name={t('Theme')} desc={isFramed() ? t('Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light.') : undefined}>
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
+          <option value="neural">Neural · 黑金 / Black & gold</option>
           <option value="system">{t('Follow system')}</option>
           <option value="halo-system">Halo · {t('Follow system')}</option>
           <option value="halo-dark">Halo Dark</option>

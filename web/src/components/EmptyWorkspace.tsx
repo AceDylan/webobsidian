@@ -3,6 +3,7 @@ import { useStore } from '../lib/store';
 import { findNode } from '../lib/tree';
 import { t } from '../lib/i18n';
 import Icon from './Icon';
+import ChromeLabel from './ChromeLabel';
 
 /** A root-level note that reads as the vault's home page ("00-主页.md", "Home.md", "首页.md"…). */
 const HOME_NOTE = /^(?:0+[-_ .]?)?(?:主页|首页|home|index|readme)\.md$/i;
@@ -28,6 +29,7 @@ export function EmptyWorkspace({ isMobile }: { isMobile: boolean }) {
   const tree = useStore((s) => s.tree);
   const recent = useStore((s) => s.recent);
   const openFile = useStore((s) => s.openFile);
+  const openGraph = useStore((s) => s.openGraph);
   const setMobileDrawer = useStore((s) => s.setMobileDrawer);
 
   const home = useMemo(
@@ -46,6 +48,7 @@ export function EmptyWorkspace({ isMobile }: { isMobile: boolean }) {
   return (
     <div className="empty-state">
       <div className="empty-launch">
+        <div className="neural-launch-kicker">NEURAL / 知识空间</div>
         <div className="big">
           <Icon name="file-text" size={40} />
         </div>
@@ -54,20 +57,23 @@ export function EmptyWorkspace({ isMobile }: { isMobile: boolean }) {
           {isMobile ? t('Pick a note below, or open the file list.') : t('Pick a note from the file list, or open one below.')}
         </p>
         <div className="empty-launch-actions">
+          <button className="btn" onClick={() => void openGraph()}>
+            <Icon name="graph" size={16} /> {t('Open graph')}
+          </button>
           {home && (
-            <button className="btn" onClick={() => void openFile(home)}>
+            <button className="btn secondary" onClick={() => void openFile(home)}>
               {t('Open home note')}
             </button>
           )}
           {isMobile && (
-            <button className={home ? 'btn secondary' : 'btn'} onClick={() => setMobileDrawer('left')}>
+            <button className="btn secondary" onClick={() => setMobileDrawer('left')}>
               {t('Show all notes')}
             </button>
           )}
         </div>
         {notes.length > 0 && (
           <div className="empty-launch-recent">
-            <div className="empty-launch-label">{t('Recent notes')}</div>
+            <div className="empty-launch-label">{t('Recent notes')}<ChromeLabel english="Recent notes" chinese="最近打开" /></div>
             {notes.map((path) => (
               <button key={path} className="empty-launch-item" onClick={() => void openFile(path)} title={path}>
                 <Icon name="file-text" size={15} />

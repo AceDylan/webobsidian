@@ -9,6 +9,7 @@ const ZH: Record<string, string> = {
   'No note is open': '还没有打开笔记',
   'Recent notes': '最近打开',
   'Open home note': '打开主页',
+  'Open graph': '打开图谱',
   'Show all notes': '查看全部笔记',
   'Press ⌘O to find a note, ⌘P for commands.': '按 ⌘O 查找笔记，⌘P 打开命令。',
   'Pick a note from the file list, or open one below.': '从文件列表里选一篇，或者打开下面的笔记。',

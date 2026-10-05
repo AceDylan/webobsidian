@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-06 (Phase 31 — Graph 星图 galaxy mode, PRD 2.0)
+Cập nhật lần cuối: 2026-10-06 (Phase 32 — Neural theme + graph homepage, PRD 2.1)
 
 ---
 
@@ -1365,3 +1365,13 @@ Cập nhật lần cuối: 2026-10-06 (Phase 31 — Graph 星图 galaxy mode, PR
 - [x] M31.3 Galaxy engine (`web/src/lib/galaxyEngine.ts`): core, jellyfish hubs, arcs, particles, branch fibres; reduced-motion/hidden-tab guards.
 - [x] M31.4 `GalaxyView`: glass cards, branch list, note detail, search, phone sheets; zh-CN strings.
 - [x] M31.5 Typecheck, tests, browser checks desktop/phone, CI deploy.
+
+## Phase 32 — Neural theme + graph homepage (PRD 2.1)
+- [x] M32.1 Neural setting/schema, neutral black tokens and glass/gold chrome, bilingual mono labels.
+- [x] M32.2 Graph landing with deep-link precedence and restored tabs, calm empty launcher and note surfaces.
+- [x] M32.3 Targeted tests/typecheck/build and browser desktop/phone/reduced-motion checks.
+- [~] M32.4 Commit/push, CI image deployment, production theme, rollback and scoped cleanup.
+
+### 2026-10-06 — Phase 32
+- Begin Neural theme + Graph homepage under explicit user authorization; preserve note content and existing graph mode.
+- Local validation: workspace/URL/conflict targeted tests passed; `npm run typecheck` passed; `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed (default Node heap limit exhausted; resource-capped retry). Built-app Playwright: 66 checks / 0 failures, desktop 1440, mid 1100, phone 390 and reduced motion. All browser writes blocked; editor/reading use fixture text against real vault graph/tree.

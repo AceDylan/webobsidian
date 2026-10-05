@@ -45,6 +45,9 @@
   --color-accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
 }
 
+/* Optional chrome labels: ordinary themes retain their compact headings. */
+.neural-caption, .neural-launch-kicker { display: none; }
+
 /* ---------- Obsidian light (default) ---------- */
 .theme-light {
   --color-base-00: #ffffff;

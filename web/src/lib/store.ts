@@ -215,7 +215,7 @@ interface AppState {
   /** Re-fetch content for the active/split tabs (after reload or remote sync). */
   hydrate: () => Promise<void>;
   /** Load persisted workspace state from the server and apply it. */
-  loadUiState: () => Promise<void>;
+  loadUiState: (landingPath?: string) => Promise<void>;
   /** Apply a workspace state pushed from another tab/device. */
   applyRemoteState: (state: any, originId: string) => Promise<void>;
 }
@@ -668,18 +668,28 @@ export const useStore = create<AppState>()(
         }
       },
 
-      loadUiState: async () => {
+      loadUiState: async (landingPath) => {
+        suppressSave = true;
         try {
           const s = await api.getUiState();
-          suppressSave = true;
-          applyPersisted(s, set);
+          // Apply the landing selection atomically so URL sync never visits the
+          // restored note before the homepage. Keep all saved tabs available.
+          const tabs: Tab[] = Array.isArray(s.tabs) ? [...s.tabs] : [];
+          if (landingPath && !tabs.some((t) => t.path === landingPath)) {
+            tabs.push({ path: landingPath, title: landingPath === GRAPH_PATH ? 'Graph view' : landingPath.split('/').pop()! });
+          }
+          applyPersisted({ ...s, tabs, ...(landingPath ? { activePath: landingPath } : {}) }, set);
+          set({ content: '', contentVersion: null, dirty: false });
           lastSaved = JSON.stringify(pickPersisted(get()));
-          suppressSave = false;
         } catch {
           /* first run / not authed */
+          if (landingPath) await get().openFile(landingPath);
+        } finally {
+          suppressSave = false;
         }
         canSave = true;
         await get().hydrate();
+        if (landingPath && get().activePath === landingPath) set((s) => pushHistory(s, landingPath));
       },
 
       applyRemoteState: async (state, originId) => {

@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import Editor from './Editor';
 import Preview from './Preview';
 import GraphTab from './GraphTab';
+import ChromeLabel from './ChromeLabel';
 import CanvasView from './CanvasView';
 import FolderView from './FolderView';
 import { isFolderPath } from '../lib/tree';
@@ -316,26 +317,26 @@ export default function Workspace() {
         </span>
         <div className="tab-scroll" ref={tabsRef}>
           <span className="halo-tab-indicator" ref={indicatorRef} aria-hidden="true" />
-          {tabs.map((t) => (
+          {tabs.map((tab) => (
             <div
-              key={t.path}
-              className={`tab ${activePath === t.path ? 'active' : ''}`}
-              onClick={() => openFile(t.path)}
-              onAuxClick={(e) => e.button === 1 && closeTab(t.path)}
-              title={t.path}
+              key={tab.path}
+              className={`tab ${activePath === tab.path ? 'active' : ''}`}
+              onClick={() => openFile(tab.path)}
+              onAuxClick={(e) => e.button === 1 && closeTab(tab.path)}
+              title={tab.path}
             >
-              {t.path === GRAPH_PATH && (
+              {tab.path === GRAPH_PATH && (
                 <Icon name="graph" size={13} style={{ marginRight: 4, flexShrink: 0 }} />
               )}
-              <span className="title">{t.title.replace(/\.(md|markdown)$/, '')}</span>
-              {dirty && activePath === t.path ? (
+              <span className="title">{tab.path === GRAPH_PATH ? <>{t('Graph view')}<ChromeLabel english="Graph view" chinese="图谱" /></> : tab.title.replace(/\.(md|markdown)$/, '')}</span>
+              {dirty && activePath === tab.path ? (
                 <span className="dot">●</span>
               ) : (
                 <span
                   className="close"
                   onClick={(e) => {
                     e.stopPropagation();
-                    closeTab(t.path);
+                    closeTab(tab.path);
                   }}
                 >
                   <Icon name="x" size={14} />
@@ -372,7 +373,7 @@ export default function Workspace() {
           <span className="grow" />
           <span className="crumbs">
             {activePath === GRAPH_PATH
-              ? t('Graph view')
+              ? <>{t('Graph view')}<ChromeLabel english="Graph view" chinese="图谱" /></>
               : activePath.split('/').map((seg, i) => (
                   <span key={i}>
                     {i > 0 && <span className="sep">/</span>}
@@ -433,7 +434,7 @@ export default function Workspace() {
             <EditorPane />
           </div>
         )}
-        {splitPath && (
+        {splitPath && activePath !== GRAPH_PATH && (
           <div className="pane split-pane">
             <div className="split-head">
               <span className="crumbs">{splitPath}</span>

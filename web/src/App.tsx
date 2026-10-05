@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, ApiError, setUnauthorizedHandler } from './lib/api';
-import { useStore } from './lib/store';
+import { useStore, GRAPH_PATH } from './lib/store';
 import Login from './components/Login';
 import ForceChangePassword from './components/ForceChangePassword';
 import Ribbon from './components/Ribbon';
@@ -39,15 +39,15 @@ export default function App() {
   const toast = useStore((s) => s.toast);
   const [checking, setChecking] = useState(true);
   // Saved choice ('system' follows the device) plus the Ribbon's toggle for this visit.
-  const [themePref, setThemePref] = useState<string>('system');
+  const [themePref, setThemePref] = useState<string>('neural');
   const [themeOverride, setThemeOverride] = useState<'theme-dark' | 'theme-light' | null>(null);
   const prefersDark = usePrefersDark();
   const theme =
     themeOverride ??
-    (themePref === 'obsidian-dark' || themePref === 'halo-dark' || ((themePref === 'system' || themePref === 'halo-system') && prefersDark) ? 'theme-dark' : 'theme-light');
+    (themePref === 'neural' || themePref === 'obsidian-dark' || themePref === 'halo-dark' || ((themePref === 'system' || themePref === 'halo-system') && prefersDark) ? 'theme-dark' : 'theme-light');
 
   const halo = themePref.startsWith('halo-') || (themePref === 'system' && isFramed());
-  const themeClass = theme + (halo ? ' halo-theme' : '');
+  const themeClass = theme + (halo ? ' halo-theme' : '') + (themePref === 'neural' && theme === 'theme-dark' ? ' neural-theme' : '');
 
   useEffect(() => {
     const pause = () => document.documentElement.classList.toggle('motion-paused', document.hidden);
@@ -107,19 +107,14 @@ export default function App() {
     let closed = false;
     useStore
       .getState()
-      .loadUiState() // restore workspace from server + open note(s)
-      .then(() => {
-        if (deepLink && deepLink !== useStore.getState().activePath) {
-          return useStore.getState().openFile(deepLink);
-        }
-      })
+      .loadUiState(deepLink ?? GRAPH_PATH) // restore tabs, then land on the graph or explicit note
       .catch(() => {})
       .then(() => {
         if (!closed) stopHubNotes = onHubOpenNote((path) => useStore.getState().openFile(path));
       });
     api
       .getSettings()
-      .then((s) => setThemePref(s?.ui?.theme || 'system'))
+      .then((s) => setThemePref(s?.ui?.theme || 'neural'))
       .catch(() => {});
     useStore.getState().loadShares(); // badge shared notes in the file tree
     loadPlugins().catch(() => {});

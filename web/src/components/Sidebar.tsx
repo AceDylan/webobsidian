@@ -6,6 +6,7 @@ import TagsPanel from './TagsPanel';
 import BookmarksPanel from './BookmarksPanel';
 import Icon from './Icon';
 import { t } from '../lib/i18n';
+import ChromeLabel from './ChromeLabel';
 
 const TITLES: Record<string, string> = {
   files: t('Files'),
@@ -13,6 +14,7 @@ const TITLES: Record<string, string> = {
   tags: t('Tags'),
   bookmarks: t('Bookmarks'),
 };
+const LABELS: Record<string, [string, string]> = { files: ['Files', '文件'], search: ['Search', '搜索'], tags: ['Tags', '标签'], bookmarks: ['Bookmarks', '书签'] };
 
 export default function Sidebar() {
   const leftPanel = useStore((s) => s.leftPanel);
@@ -89,7 +91,7 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="nav-header">
-        <span className="nav-title">{TITLES[leftPanel]}</span>
+        <span className="nav-title">{TITLES[leftPanel]}<ChromeLabel english={LABELS[leftPanel][0]} chinese={LABELS[leftPanel][1]} /></span>
         {leftPanel === 'files' && (
           <>
             <button className="nav-action" title={t('New note')} onClick={() => newNote()}>
