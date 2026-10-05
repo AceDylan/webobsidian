@@ -1370,8 +1370,10 @@ Cập nhật lần cuối: 2026-10-06 (Phase 32 — Neural theme + graph homepag
 - [x] M32.1 Neural setting/schema, neutral black tokens and glass/gold chrome, bilingual mono labels.
 - [x] M32.2 Graph landing with deep-link precedence and restored tabs, calm empty launcher and note surfaces.
 - [x] M32.3 Targeted tests/typecheck/build and browser desktop/phone/reduced-motion checks.
-- [~] M32.4 Commit/push, CI image deployment, production theme, rollback and scoped cleanup.
+- [x] M32.4 Commit/push, CI image deployment, production theme, rollback and scoped cleanup.
 
 ### 2026-10-06 — Phase 32
 - Begin Neural theme + Graph homepage under explicit user authorization; preserve note content and existing graph mode.
 - Local validation: workspace/URL/conflict targeted tests passed; `npm run typecheck` passed; `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed (default Node heap limit exhausted; resource-capped retry). Built-app Playwright: 66 checks / 0 failures, desktop 1440, mid 1100, phone 390 and reduced motion. All browser writes blocked; editor/reading use fixture text against real vault graph/tree.
+- Production validation/deployment: implementation `be7d783`, Docker Image CI run `37390256021` succeeded; compose pulled/recreated only WebObsidian, container healthy and internal `/healthz` HTTP 200. Authenticated settings patch changed only `ui.theme` (`system` → `neural`); other settings compared equal. Production Neural browser matrix: 70 checks / 0 failures. Galaxy desktop/phone interactions passed 28 checks; reduced-motion/mid follow-up passed 28 checks (split execution after the original combined process was terminated by SIGTERM). No runtime exceptions or overlaps. Public HTTPS health endpoint remains behind the existing auth gate (401 without session).
+- Rollback: first restore `ui.theme=system` using the settings API while the new image is running, then `docker tag webobsidian:rollback-pre-neural-20261006 dylanha009/webobsidian:latest` and `cd /opt/webobsidian && docker compose up -d --no-deps --pull never webobsidian`. Keep the rollback tag and data volumes. Temporary preview stopped; verification scripts/evidence retained under the runner receipt directory.
