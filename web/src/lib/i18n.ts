@@ -17,7 +17,7 @@ const ZH: Record<string, string> = {
   // Theme (App.tsx, Ribbon.tsx, Settings.tsx)
   'Toggle theme': '切换深浅色',
   'Follow system': '跟随系统',
-  'Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light.': '在 Bookmark Hub 里，「跟随系统」跟着 Hub 的深浅色。',
+  'Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light (Neural under its Starcore wallpaper).': '在 Bookmark Hub 里，「跟随系统」跟着 Hub 的深浅色（Hub 用星核壁纸时是 Neural）。',
   'Obsidian Dark': '深色',
   'Obsidian Light': '浅色',
   Theme: '主题',

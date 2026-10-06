@@ -401,7 +401,7 @@ function Appearance({ s }: { s: any }) {
   return (
     <div>
       <h2>{t('Appearance')}</h2>
-      <Row name={t('Theme')} desc={isFramed() ? t('Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light.') : undefined}>
+      <Row name={t('Theme')} desc={isFramed() ? t('Inside Bookmark Hub, “Follow system” follows the Hub’s dark / light (Neural under its Starcore wallpaper).') : undefined}>
         <select className="text-input" value={theme} onChange={(e) => save(e.target.value)}>
           <option value="neural">Neural · 黑金 / Black & gold</option>
           <option value="system">{t('Follow system')}</option>

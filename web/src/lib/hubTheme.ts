@@ -7,15 +7,22 @@
 // the address when it opens the frame (#hub_theme=dark, carried over the sign-in
 // redirect), kept for this tab; and by a message when it changes its theme later.
 // Framed, "system" then means the Hub's theme; an explicit theme still wins.
+// 'neural' is the Hub's 星核 (starcore) wallpaper scene: dark, in the Neural
+// black-and-gold theme (see themePrefInHub).
 import { fromHub, isFramed } from './hub';
 
-export type HubTheme = 'dark' | 'light';
+export type HubTheme = 'dark' | 'light' | 'neural';
 
 const KEY = 'webobsidian.hubTheme';
 const PARAM = 'hub_theme';
 
 const asTheme = (value: unknown): HubTheme | null =>
-  value === 'dark' || value === 'light' ? value : null;
+  value === 'dark' || value === 'light' || value === 'neural' ? value : null;
+
+/** The theme setting to use under the Hub's theme: "system" joins the Neural scene; anything else stays. */
+export function themePrefInHub(pref: string, hub: HubTheme | null): string {
+  return pref === 'system' && hub === 'neural' ? 'neural' : pref;
+}
 
 /** The Hub's theme for this tab (framed only), else null. */
 export function hubTheme(): HubTheme | null {

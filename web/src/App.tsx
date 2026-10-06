@@ -20,7 +20,8 @@ import { useIsMobile } from './lib/useIsMobile';
 import { reenterThroughHub, rememberHub, setHubSession, isFramed } from './lib/hub';
 import { onHubOpenNote } from './lib/hubNote';
 import { onHubEnter } from './lib/haloMotion';
-import { usePrefersDark } from './lib/usePrefersDark';
+import { useHubTheme, usePrefersDark } from './lib/usePrefersDark';
+import { themePrefInHub } from './lib/hubTheme';
 
 export default function App() {
   const authed = useStore((s) => s.authed);
@@ -39,9 +40,11 @@ export default function App() {
   const toast = useStore((s) => s.toast);
   const [checking, setChecking] = useState(true);
   // Saved choice ('system' follows the device) plus the Ribbon's toggle for this visit.
-  const [themePref, setThemePref] = useState<string>('neural');
+  const [savedThemePref, setThemePref] = useState<string>('neural');
   const [themeOverride, setThemeOverride] = useState<'theme-dark' | 'theme-light' | null>(null);
-  const prefersDark = usePrefersDark();
+  const hubTheme = useHubTheme();
+  const prefersDark = usePrefersDark(hubTheme);
+  const themePref = themePrefInHub(savedThemePref, hubTheme);
   const theme =
     themeOverride ??
     (themePref === 'neural' || themePref === 'obsidian-dark' || themePref === 'halo-dark' || ((themePref === 'system' || themePref === 'halo-system') && prefersDark) ? 'theme-dark' : 'theme-light');

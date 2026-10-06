@@ -88,3 +88,18 @@ test('outside a frame there is no Hub theme and the address is left alone', () =
     win.self = {};
   }
 });
+
+test("the Hub's starcore scene arrives as neural; only \"system\" joins it", () => {
+  hub.rememberHub({ url: HUB, sso: true });
+  const msg = { source: parent, origin: HUB, data: { source: 'hub', type: 'theme', theme: 'neural' } };
+  assert.equal(theme.acceptHubTheme(msg), 'neural');
+  assert.equal(theme.hubTheme(), 'neural');
+  (globalThis as any).location.hash = '#hub_theme=neural';
+  assert.equal(theme.takeHubTheme(), 'neural');
+  assert.equal(theme.themePrefInHub('system', 'neural'), 'neural');
+  for (const pref of ['neural', 'halo-system', 'halo-light', 'obsidian-light', 'obsidian-dark']) {
+    assert.equal(theme.themePrefInHub(pref, 'neural'), pref);
+  }
+  assert.equal(theme.themePrefInHub('system', 'dark'), 'system');
+  assert.equal(theme.themePrefInHub('system', null), 'system');
+});
