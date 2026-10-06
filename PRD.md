@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 2.1 · Cập nhật: 2026-10-06 · Trạng thái: Draft
+> Phiên bản: 2.2 · Cập nhật: 2026-10-07 · Trạng thái: Draft
+> Changelog 2.2 (theo yêu cầu người dùng — "更加具有科幻感和电影感，动效可以更夸张些"): FR-16 cinematic layer on top of Neural (and Halo dark): title-card boot sequence, hologram materialize when the active note/view changes, projector-style overlays, a still nebula behind glass chrome, light sweeps, galaxy warp-in and selection shockwaves. New persisted `ui.effects = cinematic | calm` (default cinematic). Reading text itself never moves: only the pane wrapper animates once (≤600ms) and input is never blocked. Reduced motion, `calm`, light/Obsidian themes and hidden tabs → no effects. Relaxes FR-15's "no new animated backgrounds" for chrome only.
 > Changelog 2.1 (theo yêu cầu người dùng — Neural theme + graph homepage): `neural` becomes the new-install default and is enabled on this deployment; neutral black, glass chrome, restrained gold, mono micro-labels and bilingual section headings. Sidebar, tabs, dialogs and empty launcher share the palette. Note editor/reading surfaces remain opaque and static. Root URL opens Graph view after restoring tabs; explicit note/graph links win. Existing explicit theme choices stay supported.
 > Changelog 2.0 (theo yêu cầu người dùng — muốn graph giống phong cách "Neural Vault": hiện đại, khoa học viễn tưởng): tab graph có hai chế độ 「星图 / 关系图」, mặc định 星图. 星图 là cảnh Canvas 2D tự viết (không dùng lại mã của Neural Vault — giấy phép PolyForm Noncommercial không hợp với repo MIT công khai; chỉ tham khảo thị giác): lõi cầu lưới xoay, mỗi thư mục gốc là một "sứa" phát sáng có thẻ kính, cung Bézier có hạt chảy theo màu thư mục, chọn thư mục ⇒ danh sách note với sợi quạt nối tới từng dòng + bảng chi tiết (kích thước, số chữ, liên kết, ngày sửa, tóm tắt). 关系图 giữ nguyên graph Pixi hiện có. Chỉ đọc `/api/graph` và cây file đã có; không đổi API, dữ liệu hay auth.
 > Changelog 1.9 (theo yêu cầu người dùng — "科幻感、电影感、炫酷"): graph thêm lớp sci-fi — nền sao chuyển động (canvas riêng), xung sáng chạy dọc các liên kết, vòng HUD quay quanh lõi vault, khung ngắm quanh note đang hover/chọn; theme Halo thêm viền neon cho tab/overlay. Tắt hoàn toàn khi reduced-motion hoặc tab ẩn; điện thoại giới hạn 50 xung. Không đổi dữ liệu, API hay auth.
@@ -586,3 +587,14 @@ GET    /api/v1/tags
 - Neutral black opaque writing surfaces; translucent neutral chrome, fine borders and gold focus/active accents. Mono labels and bilingual headings in both sidebars, graph header and empty launcher. No new animated backgrounds, particles or typography in editor/reading. Existing graph animation remains scoped to the graph.
 - After authentication, root URL lands on Graph view (persisted galaxy/links mode retained), preserving restored note tabs. Explicit `/note/...` and `/graph` deep links take precedence. Closing all tabs reveals a static glass launcher with Graph, recent notes and the existing home-note/file-list actions.
 - Update production theme through authenticated settings API; preserve other settings and vault content. Deploy via GitHub Actions image, keep the preceding image as rollback.
+
+## FR-16 — Cinematic layer (2026-10-07)
+
+- Setting `ui.effects`: `cinematic` (default) | `calm`; Appearance → 「电影特效 / Cinematic effects」. Active only for Neural and Halo dark, never with `prefers-reduced-motion`, and paused in hidden tabs.
+- Boot title card (≤2s, at most once per 6 hours per browser, not inside the Hub frame — the Hub plays its own intro): shutter light line, decoding `NEURAL · VAULT` title, real vault telemetry (notes / folders), iris reveal. Purely visual (`pointer-events: none`, `aria-hidden`); any key or pointer skips it. Hub `enter` → short warp flash instead.
+- Active note/view change: the pane wrapper "materializes" once (scan beam, clip reveal, chromatic text fringe, ≤600ms). Editor/preview descendants are never animated; typing and saving are never delayed.
+- Overlays (palette, settings, dialogs, context menu): projector entrance (light line → panel), scanline sheen and HUD corner brackets; palette rows stagger in (first 10 rows).
+- Chrome: a nebula + grid that lights up once and then holds still behind translucent sidebars/tab bar (a moving layer under blurred glass would re-blur every frame; editor stays opaque), ribbon energy rail, tab and active-tree-row light sweeps, glowing active indicators, status-bar link pulse.
+- Galaxy: warp-in on first entry (hubs fly out of the core with star streaks and a core flash), shockwave rings when a folder is selected.
+- Phone (≤768px): one-shot effects only (boot, materialize, overlays, warp); no looping chrome animation; drawers stay near-opaque over the note.
+

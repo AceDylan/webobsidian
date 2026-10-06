@@ -5,6 +5,7 @@ import { takeHubTheme } from './lib/hubTheme';
 import './styles/obsidian.css';
 import './styles/halo.css';
 import './styles/galaxy.css';
+import './styles/cinematic.css';
 
 // Framed by the Bookmark Hub: its theme came in the address; keep it, clean the address.
 takeHubTheme();

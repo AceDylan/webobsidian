@@ -1,0 +1,183 @@
+/* Cinematic layer (PRD FR-16). Everything is scoped to .fx-cinematic, which App sets only for
+   Neural / Halo dark with ui.effects = cinematic and full motion. Writing and reading surfaces
+   stay opaque and still: only chrome loops, and the note pane wrapper animates once on change. */
+.fx-cinematic { --fx-a: #f2c46d; --fx-b: #5ee7ff; --fx-hot: #fff3d6; --fx-glow: rgb(242 196 109 / .45); --fx-soft: rgb(242 196 109 / .14); --fx-line: rgb(242 196 109 / .26); }
+.fx-cinematic.halo-theme { --fx-a: #5ee7ff; --fx-b: #a78bfa; --fx-hot: #e6fbff; --fx-glow: rgb(94 231 255 / .42); --fx-soft: rgb(94 231 255 / .12); --fx-line: rgb(94 231 255 / .24); }
+
+/* ---------------------------------------------------------------- boot title card */
+.fx-boot { position: fixed; inset: 0; z-index: 1000; pointer-events: none; overflow: hidden; color: #f3ead8; font-family: var(--font-mono); }
+.fx-boot-shutter { position: absolute; left: 0; right: 0; height: 50.5%; background: radial-gradient(ellipse 80% 120% at 50% 100%, #15110b, #040404 70%); animation: fx-shutter 620ms cubic-bezier(.7,0,.2,1) 1300ms forwards; }
+.fx-boot-shutter.is-top { top: 0; --fx-to: -101%; }
+.fx-boot-shutter.is-bottom { bottom: 0; --fx-to: 101%; background: radial-gradient(ellipse 80% 120% at 50% 0%, #15110b, #040404 70%); }
+.fx-boot-shutter::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, rgb(255 255 255 / .025) 0 1px, transparent 1px 3px); }
+.fx-boot-line { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; transform: scaleX(0);
+  background: linear-gradient(90deg, transparent, var(--fx-a) 20%, var(--fx-hot) 50%, var(--fx-a) 80%, transparent);
+  box-shadow: 0 0 18px 3px var(--fx-glow), 0 0 60px 8px var(--fx-soft);
+  animation: fx-line-in 380ms cubic-bezier(.16,1,.3,1) 60ms forwards, fx-line-out 640ms cubic-bezier(.7,0,.2,1) 1300ms forwards; }
+.fx-boot-core { position: absolute; left: 50%; top: 50%; width: min(560px, 88vw); transform: translate(-50%, -50%); text-align: center; opacity: 0;
+  animation: fx-core-in 420ms ease-out 180ms forwards, fx-core-out 560ms cubic-bezier(.7,0,.2,1) 1320ms forwards; }
+.fx-boot-ring { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 8%, var(--fx-line) 8% 22%, transparent 22% 40%, var(--fx-glow) 40% 44%, transparent 44% 70%, var(--fx-line) 70% 86%, transparent 86%);
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 63% 65%, transparent 66% 72%, #000 73% 73.6%, transparent 74%); mask: radial-gradient(circle, transparent 62%, #000 63% 65%, transparent 66% 72%, #000 73% 73.6%, transparent 74%);
+  animation: fx-spin 2.4s linear infinite; }
+.fx-boot-kicker { position: relative; font-size: 10px; letter-spacing: .42em; color: var(--fx-a); opacity: .85; margin-bottom: 16px; }
+.fx-boot-title { position: relative; font: 600 clamp(20px, 5vw, 46px)/1.1 var(--font-mono); letter-spacing: .32em; padding-left: .32em; white-space: pre; color: #fff7e8;
+  text-shadow: -2px 0 rgb(255 70 110 / .55), 2px 0 rgb(70 220 255 / .55), 0 0 28px var(--fx-glow); animation: fx-title 1100ms ease-out 200ms both; }
+.fx-boot-meta { position: relative; margin-top: 16px; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-size: 11px; letter-spacing: .16em; color: #c9bea9; }
+.fx-boot-meta span { color: var(--fx-b); animation: fx-blink 280ms steps(2) 700ms 3 both; }
+.fx-boot-bar { position: relative; width: min(320px, 70%); height: 2px; margin: 22px auto 0; background: rgb(255 255 255 / .08); overflow: hidden; }
+.fx-boot-bar i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--fx-a), var(--fx-hot)); box-shadow: 0 0 10px var(--fx-glow); animation: fx-bar 1050ms cubic-bezier(.45,0,.2,1) 200ms forwards; }
+.fx-corner { position: absolute; width: 34px; height: 34px; border: 0 solid var(--fx-a); opacity: 0; filter: drop-shadow(0 0 6px var(--fx-glow)); animation: fx-corner-in 1500ms ease-out 120ms both; }
+.fx-corner.is-tl { top: 22px; left: 22px; border-top-width: 2px; border-left-width: 2px; }
+.fx-corner.is-tr { top: 22px; right: 22px; border-top-width: 2px; border-right-width: 2px; }
+.fx-corner.is-bl { bottom: 22px; left: 22px; border-bottom-width: 2px; border-left-width: 2px; }
+.fx-corner.is-br { bottom: 22px; right: 22px; border-bottom-width: 2px; border-right-width: 2px; }
+.fx-boot.is-skip { animation: fx-fade-out 200ms ease-in forwards; }
+@keyframes fx-shutter { to { transform: translateY(var(--fx-to)); } }
+@keyframes fx-line-in { to { transform: scaleX(1); } }
+@keyframes fx-line-out { 0% { transform: scaleX(1); opacity: 1; } 30% { transform: scaleX(1) scaleY(5); opacity: 1; } 100% { transform: scaleX(1.2) scaleY(60); opacity: 0; } }
+@keyframes fx-core-in { from { opacity: 0; filter: blur(10px); } to { opacity: 1; filter: none; } }
+@keyframes fx-core-out { to { opacity: 0; transform: translate(-50%, -50%) scale(1.6); filter: blur(12px) brightness(2); } }
+@keyframes fx-title { 0% { letter-spacing: 1.1em; opacity: 0; filter: blur(8px); } 45% { opacity: 1; filter: none; } 100% { letter-spacing: .32em; } }
+@keyframes fx-blink { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes fx-bar { to { transform: scaleX(1); } }
+@keyframes fx-corner-in { 0% { opacity: 0; transform: scale(1.8); } 25% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+@keyframes fx-fade-out { to { opacity: 0; } }
+
+/* ---------------------------------------------------------------- Hub warp flash */
+.fx-warp { position: fixed; inset: 0; z-index: 999; pointer-events: none; overflow: hidden;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgb(255 244 220 / .5), var(--fx-soft) 45%, transparent 75%);
+  animation: fx-warp 760ms ease-out forwards; }
+.fx-warp::after { content: ''; position: absolute; left: 0; right: 0; height: 3px; top: 0;
+  background: linear-gradient(90deg, transparent, var(--fx-a), var(--fx-hot), var(--fx-a), transparent); box-shadow: 0 0 24px 6px var(--fx-glow);
+  animation: fx-sweep-y 640ms cubic-bezier(.4,0,.2,1) forwards; }
+@keyframes fx-warp { 0% { opacity: 1; transform: scale(.6); } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes fx-sweep-y { from { top: 0; } to { top: 100%; } }
+
+/* ---------------------------------------------------------------- note pane materialize */
+.fx-cinematic .main-pane.fx-materialize { animation: fx-materialize 560ms cubic-bezier(.16,1,.3,1) backwards; }
+@keyframes fx-materialize {
+  0% { clip-path: inset(49.6% 0 49.6% 0); filter: brightness(2.4) saturate(.2); text-shadow: -7px 0 rgb(255 60 100 / .85), 7px 0 rgb(60 220 255 / .85); }
+  32% { clip-path: inset(0 0 0 0); filter: brightness(1.5) saturate(.6); text-shadow: -3px 0 rgb(255 60 100 / .55), 3px 0 rgb(60 220 255 / .55); }
+  60% { filter: brightness(1.1); text-shadow: -1px 0 rgb(255 60 100 / .25), 1px 0 rgb(60 220 255 / .25); }
+  100% { clip-path: inset(0 0 0 0); filter: none; text-shadow: none; }
+}
+.fx-scan { position: fixed; z-index: 60; pointer-events: none; overflow: hidden; }
+.fx-scan i { position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--fx-a) 15%, var(--fx-hot) 50%, var(--fx-a) 85%, transparent);
+  box-shadow: 0 0 22px 5px var(--fx-glow), 0 -40px 60px -20px var(--fx-soft);
+  animation: fx-sweep-y 620ms cubic-bezier(.3,0,.2,1) forwards, fx-fade-out 160ms ease-in 520ms forwards; }
+.fx-scan::before, .fx-scan::after { content: ''; position: absolute; width: 26px; height: 26px; border: 0 solid var(--fx-a); opacity: 0; filter: drop-shadow(0 0 6px var(--fx-glow)); animation: fx-corner-in 720ms ease-out both; }
+.fx-scan::before { top: 10px; left: 10px; border-top-width: 2px; border-left-width: 2px; }
+.fx-scan::after { bottom: 10px; right: 10px; border-bottom-width: 2px; border-right-width: 2px; }
+
+/* ---------------------------------------------------------------- projector overlays */
+.fx-cinematic .modal-bg { background: radial-gradient(ellipse 90% 70% at 50% 30%, rgb(0 0 0 / .38), rgb(0 0 0 / .74)); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: halo-fade 260ms ease-out both; }
+.fx-cinematic .modal-bg > .modal { position: relative; animation: fx-project 540ms cubic-bezier(.16,1,.3,1) both; transform-origin: center; box-shadow: 0 0 0 1px var(--fx-line), 0 0 70px -18px var(--fx-glow), var(--shadow); }
+.fx-cinematic .modal-bg > .modal::before { content: ''; position: absolute; inset: 7px; pointer-events: none; z-index: 2; opacity: .9;
+  background:
+    linear-gradient(var(--fx-a), var(--fx-a)) top left / 14px 1px no-repeat, linear-gradient(var(--fx-a), var(--fx-a)) top left / 1px 14px no-repeat,
+    linear-gradient(var(--fx-a), var(--fx-a)) top right / 14px 1px no-repeat, linear-gradient(var(--fx-a), var(--fx-a)) top right / 1px 14px no-repeat,
+    linear-gradient(var(--fx-a), var(--fx-a)) bottom left / 14px 1px no-repeat, linear-gradient(var(--fx-a), var(--fx-a)) bottom left / 1px 14px no-repeat,
+    linear-gradient(var(--fx-a), var(--fx-a)) bottom right / 14px 1px no-repeat, linear-gradient(var(--fx-a), var(--fx-a)) bottom right / 1px 14px no-repeat; }
+.fx-cinematic .modal-bg > .modal::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: 0;
+  background: linear-gradient(180deg, transparent 40%, var(--fx-soft) 48%, rgb(255 244 220 / .22) 50%, var(--fx-soft) 52%, transparent 60%) 0 0 / 100% 300% no-repeat;
+  animation: fx-sheen 900ms ease-out 160ms; }
+.fx-cinematic .context-menu { animation: fx-flicker 260ms steps(1) both, halo-overlay 220ms var(--spring-smooth) both; box-shadow: 0 0 0 1px var(--fx-line), 0 18px 48px -16px var(--fx-glow), var(--shadow); }
+.fx-cinematic .palette-item:nth-child(-n+10) { animation: fx-row 380ms cubic-bezier(.16,1,.3,1) backwards; }
+.fx-cinematic .palette-item:nth-child(2) { animation-delay: 25ms; } .fx-cinematic .palette-item:nth-child(3) { animation-delay: 50ms; }
+.fx-cinematic .palette-item:nth-child(4) { animation-delay: 75ms; } .fx-cinematic .palette-item:nth-child(5) { animation-delay: 100ms; }
+.fx-cinematic .palette-item:nth-child(6) { animation-delay: 125ms; } .fx-cinematic .palette-item:nth-child(7) { animation-delay: 150ms; }
+.fx-cinematic .palette-item:nth-child(8) { animation-delay: 175ms; } .fx-cinematic .palette-item:nth-child(9) { animation-delay: 200ms; }
+.fx-cinematic .palette-item:nth-child(10) { animation-delay: 225ms; }
+.fx-cinematic .palette-item.sel { background: linear-gradient(90deg, var(--fx-soft), transparent 75%), var(--bg-modifier-active); box-shadow: inset 2px 0 var(--fx-a); }
+.fx-cinematic .palette-input { caret-color: var(--fx-a); }
+.fx-cinematic .toast { animation: fx-project 420ms cubic-bezier(.16,1,.3,1) both; box-shadow: inset 2px 0 var(--fx-a), 0 0 40px -12px var(--fx-glow), var(--shadow); }
+@keyframes fx-project {
+  0% { opacity: 0; transform: scaleX(.3) scaleY(.012); filter: brightness(3); }
+  38% { opacity: 1; transform: scaleX(1) scaleY(.012); filter: brightness(2.4); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes fx-sheen { 0% { opacity: 1; background-position: 0 100%; } 100% { opacity: 1; background-position: 0 0; } }
+@keyframes fx-flicker { 0% { opacity: 0; } 20% { opacity: .9; } 35% { opacity: .2; } 55% { opacity: 1; } }
+@keyframes fx-row { from { opacity: 0; transform: translateX(-14px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* ---------------------------------------------------------------- ambient chrome (desktop) */
+/* The nebula overscans the shell; clip it so it never widens the page. */
+.fx-cinematic .app { position: relative; isolation: isolate; overflow: hidden; overflow: clip; }
+.fx-cinematic .app::before { content: ''; position: absolute; inset: -12%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(34% 30% at 14% 16%, rgb(242 196 109 / .22), transparent 70%),
+    radial-gradient(30% 28% at 88% 82%, rgb(94 231 255 / .11), transparent 70%),
+    radial-gradient(28% 22% at 60% 4%, rgb(167 139 250 / .12), transparent 70%),
+    radial-gradient(22% 30% at 4% 86%, rgb(242 150 90 / .10), transparent 70%);
+  animation: fx-nebula-in 1600ms ease-out both; }
+.fx-cinematic.halo-theme .app::before { background:
+    radial-gradient(34% 30% at 16% 18%, rgb(94 231 255 / .11), transparent 70%),
+    radial-gradient(30% 28% at 86% 78%, rgb(167 139 250 / .09), transparent 70%),
+    radial-gradient(26% 22% at 62% 8%, rgb(64 104 223 / .10), transparent 70%); }
+.fx-cinematic .app::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(rgb(255 255 255 / .028) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .028) 1px, transparent 1px);
+  background-size: 48px 48px; -webkit-mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000, transparent 85%); mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000, transparent 85%); }
+/* It lights up once and then holds still: a moving layer under blurred glass would re-blur every frame. */
+@keyframes fx-nebula-in { from { opacity: 0; transform: scale(1.12); } to { opacity: 1; transform: none; } }
+/* Chrome turns to tinted glass over the nebula; the note itself (cm-host / markdown-preview) stays opaque. */
+.fx-cinematic.neural-theme { --neural-glass: linear-gradient(180deg, rgb(22 21 19 / .62), rgb(10 10 10 / .52)); --ribbon-bg: rgb(8 8 8 / .42); }
+.fx-cinematic.neural-theme .app { background: #050505; }
+/* The workspace lets the nebula through its tab bar and header; the note area below stays opaque. */
+.fx-cinematic .workspace { background: transparent; }
+.fx-cinematic .editor-area { background: var(--bg-primary); }
+.fx-cinematic.halo-theme :is(.ribbon, .sidebar, .right-sidebar, .tab-bar, .view-header) { background: rgb(16 19 28 / .7); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.fx-cinematic .ribbon { position: relative; }
+.fx-cinematic .ribbon::after { content: ''; position: absolute; top: 0; bottom: 0; right: -1px; width: 1px; pointer-events: none;
+  background: linear-gradient(transparent, var(--fx-a), var(--fx-hot), var(--fx-a), transparent) 0 -40% / 100% 26% no-repeat;
+  filter: drop-shadow(0 0 4px var(--fx-a)); animation: fx-rail 5.5s cubic-bezier(.5,0,.5,1) infinite; }
+@keyframes fx-rail { 0% { background-position: 0 -40%; } 60%, 100% { background-position: 0 140%; } }
+.fx-cinematic .ribbon button { transition: transform 360ms var(--spring-gentle), box-shadow var(--dur-std) ease-out, color var(--dur-micro) ease-out, background var(--dur-micro) ease-out; }
+.fx-cinematic .ribbon button:hover { transform: scale(1.14); color: var(--fx-hot); box-shadow: 0 0 18px -4px var(--fx-glow); }
+.fx-cinematic .ribbon button.active { color: var(--fx-a); box-shadow: 0 0 0 1px var(--fx-line), 0 0 16px -3px var(--fx-glow); }
+.fx-cinematic .tab { position: relative; }
+.fx-cinematic .tab.active { color: var(--fx-hot); text-shadow: 0 0 14px var(--fx-glow); }
+.fx-cinematic .tab.active::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 240 210 / .14) 50%, transparent 65%) 120% 0 / 250% 100% no-repeat, linear-gradient(180deg, var(--fx-soft), transparent 70%);
+  animation: fx-glint 6s ease-in-out 600ms infinite; }
+@keyframes fx-glint { 0% { background-position: 120% 0, 0 0; } 22%, 100% { background-position: -120% 0, 0 0; } }
+.fx-cinematic .halo-tab-indicator { height: 2px; background: linear-gradient(90deg, transparent, var(--fx-a) 22%, var(--fx-hot) 50%, var(--fx-a) 78%, transparent); box-shadow: 0 0 12px 1px var(--fx-glow);
+  transition: transform 560ms var(--spring-gentle), width 560ms var(--spring-gentle); }
+.fx-cinematic .view-header .crumbs > span:last-child { color: var(--text-normal); text-shadow: 0 0 16px var(--fx-glow); }
+.fx-cinematic .tree-row { transition: background-position 420ms cubic-bezier(.16,1,.3,1), color var(--dur-micro) ease-out; background-size: 220% 100%; background-position: 100% 0; }
+.fx-cinematic .tree-row:hover { background-image: linear-gradient(90deg, var(--fx-soft), rgb(255 255 255 / .03) 45%, transparent 50%); background-position: 0 0; color: var(--fx-hot); }
+.fx-cinematic .tree-row.active { box-shadow: inset 2px 0 var(--fx-a), inset 16px 0 18px -14px var(--fx-glow); color: var(--fx-hot); animation: fx-breathe 3.2s ease-in-out infinite; }
+@keyframes fx-breathe { 50% { box-shadow: inset 2px 0 var(--fx-hot), inset 26px 0 22px -16px var(--fx-glow); } }
+.fx-cinematic .status-bar::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--fx-a); box-shadow: 0 0 8px 1px var(--fx-glow); animation: fx-pulse 2.4s ease-in-out infinite; }
+@keyframes fx-pulse { 50% { opacity: .35; transform: scale(.7); } }
+.fx-cinematic .btn { transition: box-shadow var(--dur-std) ease-out, transform 300ms var(--spring-gentle), background var(--dur-micro) ease-out; }
+.fx-cinematic .btn:hover { box-shadow: 0 0 0 1px var(--fx-line), 0 0 22px -4px var(--fx-glow); transform: translateY(-1px); }
+.fx-cinematic .empty-launch { animation: fx-project 640ms cubic-bezier(.16,1,.3,1) both; box-shadow: 0 0 0 1px var(--fx-line), 0 0 90px -30px var(--fx-glow), var(--shadow); }
+
+/* Galaxy chrome: a pulsing core mark, title slam, lit cards. */
+.fx-cinematic .galaxy-mark { position: relative; animation: fx-mark 3s ease-in-out infinite; }
+.fx-cinematic .galaxy-mark::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid var(--fx-a); opacity: 0; animation: fx-ping 3s ease-out infinite; }
+@keyframes fx-mark { 50% { box-shadow: 0 0 34px 2px rgb(242 196 109 / .55); } }
+@keyframes fx-ping { 0% { opacity: .8; transform: scale(.7); } 70%, 100% { opacity: 0; transform: scale(1.9); } }
+.fx-cinematic .galaxy-title { animation: fx-title-slam 900ms cubic-bezier(.16,1,.3,1) 200ms both; }
+@keyframes fx-title-slam { from { letter-spacing: .9em; opacity: 0; filter: blur(6px); } to { letter-spacing: .32em; opacity: 1; filter: none; } }
+.fx-cinematic .galaxy-card { transition: box-shadow var(--dur-std) ease-out, border-color var(--dur-std) ease-out; }
+.fx-cinematic .galaxy-card:hover, .fx-cinematic .galaxy-card:focus-visible { border-color: var(--fx-line); box-shadow: 0 0 0 1px var(--fx-line), 0 0 34px -8px var(--fx-glow), inset 0 1px 0 rgb(255 255 255 / .08); }
+.fx-cinematic .graph-mode-switch button[aria-pressed=true] { box-shadow: 0 0 16px -4px var(--fx-glow), inset 0 0 0 1px var(--fx-line); }
+
+/* Phone: one-shot effects only — no loops, no blur, opaque drawers over the note. */
+@media (max-width: 768px) {
+  .fx-cinematic.neural-theme { --neural-glass: linear-gradient(180deg, rgb(26 26 26 / .97), rgb(13 13 13 / .96)); }
+  .fx-cinematic.halo-theme :is(.ribbon, .sidebar, .right-sidebar, .tab-bar, .view-header) { background: #141720; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .fx-cinematic .modal-bg { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .fx-cinematic .ribbon::after, .fx-cinematic .tab.active::before, .fx-cinematic .status-bar::before, .fx-cinematic .galaxy-mark::after,
+  .fx-cinematic .tree-row.active, .fx-cinematic .galaxy-mark { animation: none; }
+  .fx-boot-ring { width: 200px; height: 200px; margin: -100px 0 0 -100px; }
+  .fx-boot-shutter { animation-delay: 950ms; }
+  .fx-boot-line { animation-delay: 40ms, 950ms; }
+  .fx-boot-core { animation-delay: 120ms, 970ms; }
+}
+@media (prefers-reduced-motion: reduce) { .fx-boot, .fx-warp, .fx-scan { display: none; } }
+@media print { .fx-boot, .fx-warp, .fx-scan { display: none !important; } }

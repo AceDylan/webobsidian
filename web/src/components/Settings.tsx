@@ -397,7 +397,9 @@ function Plugins() {
 
 function Appearance({ s }: { s: any }) {
   const [theme, setTheme] = useState(s.ui.theme);
+  const [effects, setEffects] = useState(s.ui.effects ?? 'cinematic');
   const save = async (next: string) => { setTheme(next); await api.putSettings({ ui: { theme: next } }); location.reload(); };
+  const saveEffects = async (next: string) => { setEffects(next); await api.putSettings({ ui: { effects: next } }); location.reload(); };
   return (
     <div>
       <h2>{t('Appearance')}</h2>
@@ -410,6 +412,12 @@ function Appearance({ s }: { s: any }) {
           <option value="halo-light">Halo Light</option>
           <option value="obsidian-dark">{t('Obsidian Dark')}</option>
           <option value="obsidian-light">{t('Obsidian Light')}</option>
+        </select>
+      </Row>
+      <Row name={t('Cinematic effects')} desc={t('Boot title card, note scan-in, projector dialogs and the galaxy warp. Never with reduced motion or a light theme.')}>
+        <select className="text-input" value={effects} onChange={(e) => saveEffects(e.target.value)}>
+          <option value="cinematic">{t('Cinematic')}</option>
+          <option value="calm">{t('Calm')}</option>
         </select>
       </Row>
     </div>

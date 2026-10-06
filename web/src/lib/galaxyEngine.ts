@@ -8,6 +8,8 @@ import { arcControls, cubicAt, galaxyScene, branchScene, type Galaxy, type Point
 
 const TAU = Math.PI * 2;
 const GOLD = '#f2c46d';
+const WARP_EVERY_MS = 60_000;
+let lastWarp = -Infinity;
 
 /** Deterministic random so the scene looks the same on every load. */
 function rng(seed: number) {
@@ -84,6 +86,10 @@ export class GalaxyEngine {
   private ro: ResizeObserver | null = null;
   private mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   private first = true;
+  // Cinematic layer (PRD FR-16): warp-in on first entry, shockwaves on folder selection.
+  private warp = -1; // seconds since the warp started; -1 = none
+  private warped = false;
+  private shocks: { key: string; x: number; y: number; color: string; t0: number }[] = [];
 
   constructor(private canvas: HTMLCanvasElement, private host: GalaxyHost) {
     this.ctx = canvas.getContext('2d')!;
@@ -92,6 +98,7 @@ export class GalaxyEngine {
     this.still = this.mq.matches;
     this.mq.addEventListener('change', this.onMotion);
     document.addEventListener('visibilitychange', this.onVisibility);
+    window.addEventListener('wo-fx-reveal', this.startWarp);
     canvas.addEventListener('pointermove', this.onMove);
     canvas.addEventListener('pointerleave', this.onLeave);
     canvas.addEventListener('click', this.onClick);
@@ -106,6 +113,7 @@ export class GalaxyEngine {
     this.ro?.disconnect();
     this.mq.removeEventListener('change', this.onMotion);
     document.removeEventListener('visibilitychange', this.onVisibility);
+    window.removeEventListener('wo-fx-reveal', this.startWarp);
     this.canvas.removeEventListener('pointermove', this.onMove);
     this.canvas.removeEventListener('pointerleave', this.onLeave);
     this.canvas.removeEventListener('click', this.onClick);
@@ -133,9 +141,18 @@ export class GalaxyEngine {
   }
 
   setState(s: GalaxyState) {
+    const sel = s.sel !== this.state.sel ? s.sel : null;
     this.state = s;
+    const hub = sel === null ? undefined : this.hubByKey.get(sel);
+    if (hub && !this.still && this.cinematic()) {
+      this.shocks.push({ key: hub.key, x: hub.x, y: hub.y, color: hub.color, t0: this.t });
+      if (this.shocks.length > 4) this.shocks.shift();
+    }
     this.relayout();
   }
+
+  /** The app's cinematic layer is on (dark Neural/Halo theme, effects on, full motion). */
+  private cinematic() { return !!this.canvas.closest('.fx-cinematic'); }
 
   /** Where a folder's arc meets its hub, in canvas pixels (for tests and the view). */
   hubPoint(key: string): Point | null {
@@ -150,10 +167,27 @@ export class GalaxyEngine {
     this.target = mode === 'branch' && idx >= 0
       ? (this.phone ? branchScene(n, idx, this.w, this.h - sheetH, true) : branchScene(n, idx, this.w - panelW, this.h, false))
       : galaxyScene(n, this.w, this.h, this.phone);
-    if (this.first || this.still) this.snap();
+    const warping = this.warp >= 0;
+    if ((this.first || this.still) && !warping) this.snap();
+    // Under the boot title card the warp waits for its reveal (CinematicLayer fires wo-fx-reveal).
+    if (!document.querySelector('.fx-boot')) this.startWarp();
     this.first = false;
     this.wake();
   }
+
+  /** Warp-in, once per scene: everything starts collapsed in the core and flies out, staggered (see step). */
+  private startWarp = () => {
+    if (this.warped || !this.hubs.length || this.w <= 1 || this.still || !this.cinematic()) return;
+    this.warped = true;
+    // Hopping between tabs should not replay it every time: at most once a minute.
+    if (performance.now() - lastWarp < WARP_EVERY_MS) return;
+    lastWarp = performance.now();
+    this.warp = 0;
+    this.snap();
+    for (const h of this.hubs) Object.assign(h, { x: this.core.x, y: this.core.y, s: 0.15, a: 0 });
+    this.core.r *= 0.35;
+    this.wake();
+  };
 
   private snap() {
     const T = this.target!;
@@ -196,9 +230,10 @@ export class GalaxyEngine {
   private step(dt: number): boolean {
     const T = this.target;
     if (!T) return false;
-    if (this.still) { this.snap(); return false; }
+    if (this.still) { this.snap(); this.warp = -1; this.shocks = []; return false; }
+    if (this.warp >= 0) { this.warp += dt; if (this.warp > 2) this.warp = -1; }
     const k = 1 - Math.exp(-dt * 7);
-    let moving = false;
+    let moving = this.warp >= 0 || this.shocks.length > 0;
     type Eased = Anim & { r?: number };
     const KEYS = ['x', 'y', 's', 'a', 'r'] as const;
     const ease = (o: Eased, to: Partial<Eased>) => {
@@ -211,7 +246,7 @@ export class GalaxyEngine {
       }
     };
     ease(this.core, T.core);
-    this.hubs.forEach((h, i) => ease(h, T.hubs[i]));
+    this.hubs.forEach((h, i) => { if (this.warp < 0 || this.warp > 0.18 + i * 0.055) ease(h, T.hubs[i]); });
     return moving;
   }
 
@@ -233,6 +268,7 @@ export class GalaxyEngine {
     ctx.globalAlpha = 1;
 
     const c = this.core;
+    if (this.warp >= 0) this.drawWarp();
     if (!branch && this.target) {
       // faint orbit through the hubs
       const T = this.target;
@@ -309,7 +345,67 @@ export class GalaxyEngine {
     this.drawCore();
     for (const hub of this.hubs) if (hub.a > 0.02) this.drawJelly(hub);
     if (branch && !this.phone) this.drawFibres();
+    if (this.shocks.length) this.drawShocks();
     ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Warp-in: star streaks racing out of the core, a core flash and one expanding ring. */
+  private drawWarp() {
+    const { ctx, w, h } = this, c = this.core, e = this.warp;
+    const I = Math.max(0, 1 - e / 1.5) ** 2;
+    if (I <= 0) return;
+    const reach = Math.hypot(w, h) / 2;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (const d of this.dust) {
+      const x = d.x * w, y = d.y * h, dx = x - c.x, dy = y - c.y, dist = Math.hypot(dx, dy) || 1;
+      const len = I * (40 + 220 * d.z) * (0.3 + dist / reach);
+      ctx.strokeStyle = d.warm ? `rgba(255,214,150,${(0.65 * I).toFixed(3)})` : `rgba(205,220,255,${(0.55 * I).toFixed(3)})`;
+      ctx.lineWidth = 0.6 + d.z * 1.2;
+      ctx.beginPath(); ctx.moveTo(x - (dx / dist) * len, y - (dy / dist) * len); ctx.lineTo(x, y); ctx.stroke();
+    }
+    const flash = Math.max(0, 1 - e / 0.7);
+    if (flash > 0) {
+      const R = reach * (0.25 + 0.6 * (1 - flash));
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, R);
+      g.addColorStop(0, `rgba(255,244,220,${(0.85 * flash).toFixed(3)})`);
+      g.addColorStop(0.3, `rgba(242,196,109,${(0.35 * flash).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, TAU); ctx.fill();
+    }
+    const u = Math.min(1, e / 1.1);
+    if (u < 1) {
+      ctx.strokeStyle = rgba(GOLD, 0.7 * (1 - u));
+      ctx.lineWidth = 3 * (1 - u) + 0.5;
+      ctx.beginPath(); ctx.arc(c.x, c.y, reach * (1 - (1 - u) ** 3), 0, TAU); ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Selection shockwave: three staggered rings and a flash in the folder's colour. */
+  private drawShocks() {
+    const { ctx } = this;
+    const Rmax = this.phone ? 150 : 280;
+    this.shocks = this.shocks.filter((s) => this.t - s.t0 < 1.4);
+    for (const s of this.shocks) {
+      const hub = this.hubByKey.get(s.key);
+      const x = hub ? hub.x : s.x, y = hub ? hub.y : s.y; // ride along as the scene moves aside
+      for (let k = 0; k < 3; k++) {
+        const u = (this.t - s.t0 - k * 0.12) / 1.1;
+        if (u <= 0 || u >= 1) continue;
+        ctx.strokeStyle = rgba(s.color, 0.8 * (1 - u) ** 1.5);
+        ctx.lineWidth = 2.6 * (1 - u) + 0.4;
+        ctx.beginPath(); ctx.arc(x, y, Rmax * (1 - (1 - u) ** 3) * (1 - k * 0.18), 0, TAU); ctx.stroke();
+      }
+      const f = Math.max(0, 1 - (this.t - s.t0) / 0.45);
+      if (f > 0) {
+        const g = 60 + 120 * (1 - f);
+        ctx.globalAlpha = f;
+        ctx.drawImage(glow(s.color), x - g / 2, y - g / 2, g, g);
+        ctx.globalAlpha = 1;
+      }
+    }
   }
 
   /** Wireframe sphere: Fibonacci points, nearest-neighbour struts, a few gold hot struts, embers. */

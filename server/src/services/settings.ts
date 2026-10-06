@@ -72,6 +72,8 @@ const SettingsSchema = z.object({
       // 'system' follows the device's light/dark preference (inside the Bookmark Hub frame: the frame's).
       theme: z.enum(['neural', 'system', 'obsidian-dark', 'obsidian-light', 'halo-system', 'halo-dark', 'halo-light']).default('neural'),
       defaultView: z.enum(['live', 'source', 'reading']).default('live'),
+      // Cinematic layer (PRD FR-16): 'calm' keeps only the theme, without the boot card, sweeps and warps.
+      effects: z.enum(['cinematic', 'calm']).default('cinematic'),
     })
     .default({}),
   plugins: z

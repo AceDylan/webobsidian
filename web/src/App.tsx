@@ -22,6 +22,8 @@ import { onHubOpenNote } from './lib/hubNote';
 import { onHubEnter } from './lib/haloMotion';
 import { useHubTheme, usePrefersDark } from './lib/usePrefersDark';
 import { themePrefInHub } from './lib/hubTheme';
+import CinematicLayer, { useReducedMotion } from './components/CinematicLayer';
+import { cinematicOn, type Effects } from './lib/cinematic';
 
 export default function App() {
   const authed = useStore((s) => s.authed);
@@ -42,6 +44,9 @@ export default function App() {
   // Saved choice ('system' follows the device) plus the Ribbon's toggle for this visit.
   const [savedThemePref, setThemePref] = useState<string>('neural');
   const [themeOverride, setThemeOverride] = useState<'theme-dark' | 'theme-light' | null>(null);
+  const [effects, setEffects] = useState<Effects>('cinematic');
+  const [settingsReady, setSettingsReady] = useState(false);
+  const reduced = useReducedMotion();
   const hubTheme = useHubTheme();
   const prefersDark = usePrefersDark(hubTheme);
   const themePref = themePrefInHub(savedThemePref, hubTheme);
@@ -50,7 +55,9 @@ export default function App() {
     (themePref === 'neural' || themePref === 'obsidian-dark' || themePref === 'halo-dark' || ((themePref === 'system' || themePref === 'halo-system') && prefersDark) ? 'theme-dark' : 'theme-light');
 
   const halo = themePref.startsWith('halo-') || (themePref === 'system' && isFramed());
-  const themeClass = theme + (halo ? ' halo-theme' : '') + (themePref === 'neural' && theme === 'theme-dark' ? ' neural-theme' : '');
+  const baseThemeClass = theme + (halo ? ' halo-theme' : '') + (themePref === 'neural' && theme === 'theme-dark' ? ' neural-theme' : '');
+  const fx = cinematicOn(baseThemeClass, effects, reduced);
+  const themeClass = baseThemeClass + (fx ? ' fx-cinematic' : '');
 
   useEffect(() => {
     const pause = () => document.documentElement.classList.toggle('motion-paused', document.hidden);
@@ -117,8 +124,12 @@ export default function App() {
       });
     api
       .getSettings()
-      .then((s) => setThemePref(s?.ui?.theme || 'neural'))
-      .catch(() => {});
+      .then((s) => {
+        setThemePref(s?.ui?.theme || 'neural');
+        setEffects(s?.ui?.effects === 'calm' ? 'calm' : 'cinematic');
+      })
+      .catch(() => {})
+      .finally(() => setSettingsReady(true));
     useStore.getState().loadShares(); // badge shared notes in the file tree
     loadPlugins().catch(() => {});
     // websocket live updates
@@ -244,6 +255,7 @@ export default function App() {
       <ContextMenu />
       <FolderPicker />
       {toast && <div className="toast">{toast}</div>}
+      <CinematicLayer on={fx} ready={settingsReady} />
     </div>
   );
 }

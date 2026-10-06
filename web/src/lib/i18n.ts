@@ -22,6 +22,14 @@ const ZH: Record<string, string> = {
   'Obsidian Light': '浅色',
   Theme: '主题',
   Appearance: '外观',
+  // Cinematic layer (CinematicLayer.tsx, Settings.tsx)
+  'Cinematic effects': '电影特效',
+  'Cinematic': '电影',
+  'Calm': '安静',
+  'Boot title card, note scan-in, projector dialogs and the galaxy warp. Never with reduced motion or a light theme.': '开场片头、切换笔记时的扫描成像、投影式弹窗和星图跃迁。系统开了「减少动态效果」或用浅色主题时不播放。',
+  'Knowledge vault': '知识库',
+  '{notes} notes · {folders} sectors': '{notes} 篇笔记 · {folders} 个分区',
+  'Linking vault…': '正在连接知识库…',
   // Chrome: ribbon, sidebar, status bar, tab bar, file tree and tab menus
   'Backlinks for {name}': '「{name}」的反向链接',
   'Outgoing links from {name}': '「{name}」的出链',

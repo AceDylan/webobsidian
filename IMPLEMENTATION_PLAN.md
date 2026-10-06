@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-06 (Phase 32 — Neural theme + graph homepage, PRD 2.1)
+Cập nhật lần cuối: 2026-10-07 (Phase 33 — Cinematic layer, PRD 2.2)
 
 ---
 
@@ -1377,3 +1377,16 @@ Cập nhật lần cuối: 2026-10-06 (Phase 32 — Neural theme + graph homepag
 - Local validation: workspace/URL/conflict targeted tests passed; `npm run typecheck` passed; `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed (default Node heap limit exhausted; resource-capped retry). Built-app Playwright: 66 checks / 0 failures, desktop 1440, mid 1100, phone 390 and reduced motion. All browser writes blocked; editor/reading use fixture text against real vault graph/tree.
 - Production validation/deployment: implementation `be7d783`, Docker Image CI run `37390256021` succeeded; compose pulled/recreated only WebObsidian, container healthy and internal `/healthz` HTTP 200. Authenticated settings patch changed only `ui.theme` (`system` → `neural`); other settings compared equal. Production Neural browser matrix: 70 checks / 0 failures. Galaxy desktop/phone interactions passed 28 checks; reduced-motion/mid follow-up passed 28 checks (split execution after the original combined process was terminated by SIGTERM). No runtime exceptions or overlaps. Public HTTPS health endpoint remains behind the existing auth gate (401 without session).
 - Rollback: first restore `ui.theme=system` using the settings API while the new image is running, then `docker tag webobsidian:rollback-pre-neural-20261006 dylanha009/webobsidian:latest` and `cd /opt/webobsidian && docker compose up -d --no-deps --pull never webobsidian`. Keep the rollback tag and data volumes. Temporary preview stopped; verification scripts/evidence retained under the runner receipt directory.
+
+## Phase 33 — Cinematic layer (PRD 2.2, theo yêu cầu người dùng)
+- [x] M33.1 `ui.effects` setting (schema + Appearance row), `fx-cinematic` gate (theme, reduced motion, calm).
+- [x] M33.2 Boot title card (6h throttle, skip, Hub warp), pane materialize on active-path change.
+- [x] M33.3 Projector overlays, ambient nebula chrome, light sweeps, phone limits.
+- [x] M33.4 Galaxy warp-in + selection shockwaves.
+- [~] M33.5 Tests, typecheck/build, browser desktop/phone/reduced-motion checks, CI deploy, rollback.
+
+### 2026-10-07 — Phase 33
+- Begin cinematic layer under explicit user request (scheduled cchclaude task); keep editor text static, keep calm/reduced-motion paths.
+- Local validation: `npm run typecheck` (server + web) passed; web tests 41/41 (new `cinematic.test.ts`), server tests 24/24; `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed. Built-app Playwright against the production API with every write intercepted: 51 checks / 0 failures — boot card plays once (6h throttle, decorative, click-through, key skip), galaxy warp + shockwave, pane materialize and clean-up, typing/saving during the scan, opaque static editor text, projector palette/settings, phone, reduced motion / calm / light themes off, Halo dark on, no runtime errors or horizontal overflow.
+- Found and fixed during validation: the overscanned nebula widened the page by 12% (phone settings nav became unclickable) → `.app` clips overflow; a drifting nebula under blurred glass halved frame rate on software rendering → nebula lights up once and holds still (note view back to 16.7 ms/frame, same as calm).
+
