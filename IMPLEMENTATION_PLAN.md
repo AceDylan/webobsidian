@@ -1383,10 +1383,12 @@ Cập nhật lần cuối: 2026-10-07 (Phase 33 — Cinematic layer, PRD 2.2)
 - [x] M33.2 Boot title card (6h throttle, skip, Hub warp), pane materialize on active-path change.
 - [x] M33.3 Projector overlays, ambient nebula chrome, light sweeps, phone limits.
 - [x] M33.4 Galaxy warp-in + selection shockwaves.
-- [~] M33.5 Tests, typecheck/build, browser desktop/phone/reduced-motion checks, CI deploy, rollback.
+- [x] M33.5 Tests, typecheck/build, browser desktop/phone/reduced-motion checks, CI deploy, rollback.
 
 ### 2026-10-07 — Phase 33
 - Begin cinematic layer under explicit user request (scheduled cchclaude task); keep editor text static, keep calm/reduced-motion paths.
 - Local validation: `npm run typecheck` (server + web) passed; web tests 41/41 (new `cinematic.test.ts`), server tests 24/24; `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed. Built-app Playwright against the production API with every write intercepted: 51 checks / 0 failures — boot card plays once (6h throttle, decorative, click-through, key skip), galaxy warp + shockwave, pane materialize and clean-up, typing/saving during the scan, opaque static editor text, projector palette/settings, phone, reduced motion / calm / light themes off, Halo dark on, no runtime errors or horizontal overflow.
 - Found and fixed during validation: the overscanned nebula widened the page by 12% (phone settings nav became unclickable) → `.app` clips overflow; a drifting nebula under blurred glass halved frame rate on software rendering → nebula lights up once and holds still (note view back to 16.7 ms/frame, same as calm).
+- Production: implementation `d1cc180`, Docker Image CI run `37532793498` succeeded; compose pulled/recreated only WebObsidian (running digest `sha256:fdba3a2e…` = CI digest), container healthy, internal `/healthz` HTTP 200, public HTTPS still behind the auth gate (401 without session). `settings.json` untouched: the API serves the schema default `ui.effects = cinematic`. Same browser matrix against production: 51 checks / 0 failures.
+- Rollback: turn the layer off without a deploy via Settings → 外观 → 电影特效 → 安静 (`ui.effects = calm`); full rollback `docker tag webobsidian:rollback-pre-fx-20261007 dylanha009/webobsidian:latest && cd /opt/webobsidian && docker compose up -d --no-deps --pull never webobsidian` (pull_policy is always). Old images keep working with a stored `effects` key (zod strips unknown keys).
 
