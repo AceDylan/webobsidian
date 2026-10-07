@@ -127,3 +127,12 @@ h4.galaxy-kicker { margin: 18px 0 8px; }
 @media (prefers-reduced-motion: reduce) {
   .galaxy-list, .galaxy-detail { animation: halo-fade 120ms ease-out both; }
 }
+
+/* PRD 2.3: note rows arrive with their fibres (first rows staggered), the open folder card breathes. */
+.galaxy-row { animation: galaxy-row-in 420ms cubic-bezier(.16,1,.3,1) both; animation-delay: calc(120ms + var(--i, 0) * 28ms); }
+@keyframes galaxy-row-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+.galaxy.is-branch .galaxy-card.on { animation: galaxy-card-breathe 2.4s ease-in-out infinite; }
+@keyframes galaxy-card-breathe { 50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent), 0 0 46px -6px color-mix(in srgb, var(--c) 70%, transparent), inset 0 1px 0 rgb(255 255 255 / .08); } }
+@media (prefers-reduced-motion: reduce) {
+  .galaxy-row, .galaxy.is-branch .galaxy-card.on { animation: none; }
+}

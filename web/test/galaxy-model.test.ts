@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { branchScene, buildGalaxy, countChars, excerpt, folderColors, formatSize, galaxyScene, OTHER_KEY, PALETTE, ROOT_KEY, type RawGraph } from '../src/lib/galaxyModel';
+import { BRANCH_REACH, branchScene, buildGalaxy, countChars, excerpt, folderColors, formatSize, galaxyScene, OTHER_KEY, PALETTE, ROOT_KEY, type RawGraph } from '../src/lib/galaxyModel';
 import type { TreeNode } from '../src/lib/api';
 
 const file = (path: string, size = 100, mtime = 1): TreeNode => ({ name: path.split('/').pop()!, path, type: 'file', size, mtime });
@@ -77,6 +77,11 @@ test('branch scene puts the open folder level with the core and hides far hubs',
   assert.equal(s.hubs[4].a, 1);
   const ys = s.hubs.filter(h => h.a > 0).map(h => h.y).sort((p, q) => p - q);
   assert.ok(ys.every((y, i) => i === 0 || y - ys[i - 1] >= 30), 'even vertical spacing');
+  const wide = branchScene(11, 4, 1120, 900, false);
+  assert.ok(Math.abs(1120 - wide.hubs[4].x - BRANCH_REACH) < 1, 'wide screens: the open folder hugs the panels, fibres stay short');
+  assert.ok(wide.core.x > 80 && wide.core.x < wide.hubs[4].x);
+  const narrow = branchScene(11, 4, 420, 800, false);
+  assert.ok(narrow.core.x >= 80 && narrow.hubs[4].x > narrow.core.x, 'narrow scenes keep the core on screen');
   const phone = branchScene(11, 2, 390, 300, true);
   assert.equal(phone.hubs.filter(h => h.a > 0).length, 1);
 });

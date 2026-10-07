@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-07 (Phase 33 — Cinematic layer, PRD 2.2)
+Cập nhật lần cuối: 2026-10-07 (Phase 34 — Galaxy star core & jellyfish, PRD 2.3)
 
 ---
 
@@ -482,6 +482,7 @@ Cập nhật lần cuối: 2026-10-07 (Phase 33 — Cinematic layer, PRD 2.2)
       origin Hub, kẹp 0–4000) ⇒ thanh lấy giá trị lớn hơn. Test `web/test/hub-keyboard.test.ts`.
 
 ### Nhật ký tiến độ
+- 2026-10-07 (Phase 34): 星图 vẽ lại — lõi sao (plasma, đĩa bồi tụ trước/sau, thấu kính, tia, phản lực, sóng nhịp tim), sứa phát quang (chuông co bóp, xúc tu sóng, đèn viền), ống năng lượng có xung, sợi nhánh mọc dần; bố cục nhánh bám sát panel trên màn rộng. Typecheck sạch, test web pass, Playwright 56/56 + 51/51.
 - 2026-10-06 (Phase 31): tab graph thêm chế độ 星图 (Canvas 2D tự viết: lõi lưới, sứa theo thư mục gốc, cung hạt sáng, danh sách + sợi quạt, thẻ chi tiết; điện thoại dùng chip hai bên + bottom sheet). 关系图 giữ nguyên. Typecheck sạch, test web 32/32, build web OK, Playwright 56/56 trên vault thật (desktop/mid/phone/reduced-motion, chặn mọi request ghi).
 - 2026-10-05 (Phase 30, M30.5): lớp sci-fi cho graph (sao, xung sáng, vòng HUD, khung ngắm) + viền neon theme Halo. Typecheck sạch, test web 25/25, Playwright 56/56 (desktop/mobile × dark/light × reduced/normal).
 - 2026-10-01 (Phase 29, M29.5 + M29.9): dịch Settings/dialog/format toolbar; Hub mở note ngay trong frame (không đăng
@@ -1392,3 +1393,12 @@ Cập nhật lần cuối: 2026-10-07 (Phase 33 — Cinematic layer, PRD 2.2)
 - Production: implementation `d1cc180`, Docker Image CI run `37532793498` succeeded; compose pulled/recreated only WebObsidian (running digest `sha256:fdba3a2e…` = CI digest), container healthy, internal `/healthz` HTTP 200, public HTTPS still behind the auth gate (401 without session). `settings.json` untouched: the API serves the schema default `ui.effects = cinematic`. Same browser matrix against production: 51 checks / 0 failures.
 - Rollback: turn the layer off without a deploy via Settings → 外观 → 电影特效 → 安静 (`ui.effects = calm`); full rollback `docker tag webobsidian:rollback-pre-fx-20261007 dylanha009/webobsidian:latest && cd /opt/webobsidian && docker compose up -d --no-deps --pull never webobsidian` (pull_policy is always). Old images keep working with a stored `effects` key (zod strips unknown keys).
 
+## Phase 34 — Galaxy star core & jellyfish (PRD 2.3, theo yêu cầu người dùng)
+- [x] M34.1 Star core (plasma body, accretion disk front/back, lensing, corona, prominences, jets, HUD, heartbeat, plasma arcs).
+- [x] M34.2 Bioluminescent jellyfish (pulsing bell, meridians, organs, rim lights, tentacles, oral arms, motes, lock-on).
+- [x] M34.3 Conduits with data stream, comet packets, surges; branch fibres grow row by row from a splitter node; row hover highlight.
+- [x] M34.4 Branch layout hugs the panels on wide screens (`BRANCH_REACH`), unit test.
+- [x] M34.5 Typecheck/tests/build, browser checks desktop/FHD/mid/phone/reduced motion, CI deploy, rollback.
+
+### 2026-10-07 — Phase 34
+- Local validation: `npm run typecheck` passed; web tests pass (galaxy-model 7/7 incl. new wide/narrow branch layout case); `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed. Built-app Playwright against the production API with every write intercepted: galaxy suite 56/56 (desktop 1440, mid 1100, phone 390, reduced motion), cinematic suite 51/51. Headless software-rendered frame time unchanged vs. production (desktop median 33 ms, phone 16.7 ms). 1920×1080: card → list gap ~370 px → ~200 px.

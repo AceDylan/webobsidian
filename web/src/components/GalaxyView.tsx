@@ -241,14 +241,16 @@ export default function GalaxyView() {
             {phone && <button className="galaxy-x" aria-label={t('Back to galaxy')} onClick={close}><Icon name="x" size={15} /></button>}
           </header>
           <div className="galaxy-rows" ref={rowsRef} onScroll={() => engineRef.current?.redraw()}>
-            {folder.notes.slice(0, MAX_ROWS).map((n) => (
+            {folder.notes.slice(0, MAX_ROWS).map((n, i) => (
               <button
                 key={n.id}
                 data-id={n.id}
                 className="galaxy-row"
                 aria-current={n.id === active ? 'true' : undefined}
-                style={{ '--c': folder.color } as CSSProperties}
+                style={{ '--c': folder.color, '--i': Math.min(i, 16) } as CSSProperties}
                 onClick={() => setActive(n.id)}
+                onPointerEnter={() => engineRef.current?.setHoverRow(n.id)}
+                onPointerLeave={() => engineRef.current?.setHoverRow(null)}
                 onDoubleClick={() => openFile(n.id)}
                 title={t('Double-click a note to open it')}
               >

@@ -120,8 +120,8 @@ export interface Scene { core: Point & { r: number }; hubs: (Point & { s: number
 
 /** Overview: core in the middle, hubs round an ellipse starting at 12 o'clock, clockwise. */
 export function galaxyScene(n: number, w: number, h: number, phone: boolean): Scene {
-  const top = phone ? 64 : 64, bottom = phone ? 84 : 92, card = phone ? 26 : 66;
-  const hubR = phone ? 13 : 22;
+  const top = phone ? 64 : 64, bottom = phone ? 84 : 92, card = phone ? 26 : 74;
+  const hubR = phone ? 13 : 25;
   const cy = top + (h - top - bottom - card) / 2 + hubR * 0.6;
   const ry = Math.max(40, Math.min(h * 0.4, cy - top - hubR * 1.4, h - bottom - card - hubR - cy));
   const rx = Math.max(60, Math.min(w * 0.38, w / 2 - (phone ? 72 : 80)));
@@ -140,6 +140,9 @@ export function galaxyScene(n: number, w: number, h: number, phone: boolean): Sc
   return { core, hubs, hubR, compact: phone || perimeter / Math.max(1, n) < 150, cardSide: 'below' };
 }
 
+/** Branch mode, desktop: distance from the open folder's hub to the panels (card ≈ 200px + fibres). */
+export const BRANCH_REACH = 360;
+
 /**
  * One folder open: the scene moves into `sceneW` (left of the panels). Desktop: core on the
  * left, hubs on a right-facing arc with the selected one level with the core. Phone: the
@@ -153,9 +156,11 @@ export function branchScene(n: number, sel: number, sceneW: number, h: number, p
       : { x: core.x, y: core.y, s: 0.3, a: 0 });
     return { core, hubs, hubR: 13, compact: true, cardSide: 'right' };
   }
-  const core = { x: Math.max(80, sceneW * 0.16), y: h / 2, r: Math.max(30, Math.min(sceneW * 0.09, h * 0.13)) };
-  // Hubs on a ")" curve with even vertical spacing, the open folder level with the core.
+  // Hubs on a ")" curve with even vertical spacing, the open folder level with the core. The
+  // whole group hugs the panels: the open folder's card sits BRANCH_REACH from the list, so the
+  // fibres stay short on wide screens instead of crossing an empty field.
   const Rx = Math.max(110, Math.min(sceneW * 0.38, 420));
+  const core = { x: Math.max(80, sceneW - BRANCH_REACH - Rx), y: h / 2, r: Math.max(30, Math.min(sceneW * 0.09, h * 0.13, 64)) };
   const dy = Math.max(30, Math.min(58, (h - 150) / Math.max(1, n - 1)));
   const Ry = Math.max(120, dy * (n / 2 + 0.6));
   const hubs = Array.from({ length: n }, (_, i) => {
