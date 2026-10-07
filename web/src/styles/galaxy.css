@@ -40,26 +40,62 @@
 
 .galaxy-cards { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .galaxy-card { pointer-events: auto; position: absolute; left: 0; top: 0; will-change: transform, opacity; min-width: 104px; padding: 8px 12px 9px; border-radius: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; color: #e4e4e7; cursor: pointer; transition: border-color var(--dur-micro) ease-out, box-shadow var(--dur-std) ease-out; }
-.galaxy-card-count { font: 600 20px/1.1 'Mona Sans', var(--font-ui); color: #f4f4f5; font-variant-numeric: tabular-nums; }
-.galaxy-card-name { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d4d8; white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
-.galaxy-card-name::before { content: ''; flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.galaxy-card-top { display: flex; align-items: center; gap: 8px; }
+.galaxy-card-orb { flex-shrink: 0; width: 18px; height: 18px; border-radius: 6px; border: 1px solid rgb(255 255 255 / .1); background: radial-gradient(circle at 50% 50%, transparent 0 0), rgb(255 255 255 / .03); position: relative; }
+.galaxy-card-orb::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff 0 6%, var(--c) 32%, color-mix(in srgb, var(--c) 30%, #050507) 78%); box-shadow: 0 0 8px -1px var(--c); }
+.galaxy-card-count { font: 600 20px/1.1 var(--font-mono); color: #f4f4f5; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.galaxy-card-name { display: flex; align-items: baseline; gap: 6px; font-size: 12px; font-weight: 600; color: #e4e4e7; white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.galaxy-card-name small, .galaxy-detail-folder small { font: 500 9px/1 var(--font-mono); letter-spacing: .14em; color: #52525b; }
 .galaxy-card-meta { font: 10px/1.4 var(--font-mono); color: #71717a; }
 .galaxy-card:hover, .galaxy-card.on { border-color: color-mix(in srgb, var(--c) 55%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent), 0 0 34px -8px color-mix(in srgb, var(--c) 60%, transparent), inset 0 1px 0 rgb(255 255 255 / .06); }
 .galaxy-card:focus-visible { outline: 1px solid var(--c); outline-offset: 2px; }
 .galaxy-card.empty .galaxy-card-count { color: #71717a; }
 .galaxy-card.compact, .galaxy.is-branch .galaxy-card:not(.on) { flex-direction: row; align-items: baseline; gap: 7px; min-width: 0; padding: 5px 10px; border-radius: 999px; }
-.galaxy-card.compact .galaxy-card-count, .galaxy.is-branch .galaxy-card:not(.on) .galaxy-card-count { font-size: 13px; order: 2; color: #a1a1aa; }
+.galaxy-card.compact .galaxy-card-count, .galaxy.is-branch .galaxy-card:not(.on) .galaxy-card-count { font-size: 13px; color: #a1a1aa; }
+.galaxy-card.compact .galaxy-card-top, .galaxy.is-branch .galaxy-card:not(.on) .galaxy-card-top { order: 2; }
+.galaxy-card.compact :is(.galaxy-card-orb, .galaxy-card-name small), .galaxy.is-branch .galaxy-card:not(.on) :is(.galaxy-card-orb, .galaxy-card-name small) { display: none; }
 .galaxy-card.compact .galaxy-card-name, .galaxy.is-branch .galaxy-card:not(.on) .galaxy-card-name { font-size: 11.5px; max-width: 120px; }
 .galaxy.is-branch .galaxy-card:not(.on) .galaxy-card-meta { display: none; }
 .galaxy.is-branch .galaxy-card.on:not(.compact) { padding: 12px 16px 13px; min-width: 132px; }
 .galaxy.is-branch .galaxy-card.on:not(.compact) .galaxy-card-count { font-size: 28px; }
 
-.galaxy-stats { position: absolute; z-index: 10; left: 16px; bottom: 18px; display: flex; gap: 14px; font: 10.5px/1 var(--font-mono); color: #8b8d98; letter-spacing: .04em; }
-.galaxy-stats b { color: #52525b; font-weight: 500; margin-right: 5px; }
+/* Telemetry readout, bottom left: NEURAL / VAULT · OS / ● fps · renderer · counts */
+.galaxy-stats { position: absolute; z-index: 10; left: 18px; bottom: 16px; display: grid; gap: 6px; font: 10px/1.2 var(--font-mono); color: #71717a; letter-spacing: .04em; pointer-events: none; }
+.galaxy-os { display: grid; gap: 3px; }
+.galaxy-os b { color: #d4d4d8; font: 600 11px/1 var(--font-ui); letter-spacing: .55em; }
+.galaxy-os span { color: #52525b; font-size: 9.5px; letter-spacing: .5em; }
+.galaxy-telemetry { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.galaxy-telemetry i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; animation: galaxy-blink 2s ease-in-out infinite; }
+.galaxy-telemetry i.is-paused { background: #f2c46d; box-shadow: 0 0 8px #f2c46d; animation: none; }
+@keyframes galaxy-blink { 50% { opacity: .35; } }
+
+/* Top-right: pause / reset, and the legend under it (wide screens, overview only). */
+.galaxy-controls { position: absolute; z-index: 20; top: 12px; right: 16px; display: flex; gap: 2px; padding: 3px; border-radius: 999px; }
+.galaxy-controls button { display: flex; align-items: center; gap: 6px; border: 0; background: transparent; color: #a1a1aa; font-size: 12px; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.galaxy-controls button:hover, .galaxy-controls button[aria-pressed=true] { background: rgb(255 255 255 / .07); color: #fafafa; }
+.galaxy-legend { position: absolute; z-index: 12; top: 60px; right: 16px; width: 186px; max-height: calc(100% - 150px); overflow-y: auto; padding: 12px 8px 10px; border-radius: 14px; scrollbar-width: none; animation: galaxy-in var(--dur-hero) var(--spring-smooth) both; }
+.galaxy-legend-head { display: flex; align-items: baseline; gap: 6px; padding: 0 8px 8px; color: #d4d4d8; font-size: 12px; }
+.galaxy-legend-head small { font: 9.5px var(--font-mono); letter-spacing: .14em; color: #52525b; }
+.galaxy-legend button { display: flex; align-items: center; width: 100%; padding: 5px 8px; border: 0; border-radius: 7px; background: transparent; color: #d4d4d8; font-size: 12px; text-align: left; cursor: pointer; }
+.galaxy-legend button:hover { background: rgb(255 255 255 / .05); color: #fafafa; }
+.galaxy-legend-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.galaxy-legend-n { font: 10.5px var(--font-mono); color: #71717a; }
+.galaxy-legend-foot { display: flex; justify-content: space-between; margin: 8px 8px 0; padding-top: 9px; border-top: 1px solid rgb(255 255 255 / .06); font-size: 11px; color: #8b8d98; }
+.galaxy-legend-foot span { display: flex; align-items: center; gap: 6px; }
+.galaxy-legend-foot i { width: 10px; height: 2px; border-radius: 1px; background: rgb(220 228 245 / .45); }
+.galaxy-legend-foot i.is-mutual { background: #f2c46d; box-shadow: 0 0 6px #f2c46d; }
 .galaxy-empty { position: absolute; z-index: 10; left: 50%; top: 68%; transform: translateX(-50%); color: #a1a1aa; font-size: 13px; }
 
 .galaxy-list, .galaxy-detail { position: absolute; z-index: 12; top: 60px; bottom: 16px; right: 16px; border-radius: 16px; animation: galaxy-in var(--dur-hero) var(--spring-smooth) both; }
 .galaxy-list { width: 330px; display: flex; flex-direction: column; overflow: hidden; }
+/* Desktop: the notes float in space beside the open planet; fibres end at each row's node. */
+.galaxy:not(.is-phone) .galaxy-list { background: none; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.galaxy:not(.is-phone) .galaxy-list-head { border-bottom-color: transparent; padding-left: 26px; }
+.galaxy:not(.is-phone) .galaxy-list-head .galaxy-dot { display: none; }
+.galaxy:not(.is-phone) .galaxy-row { margin: 0 6px; width: calc(100% - 12px); border: 1px solid transparent; border-radius: 10px; text-shadow: 0 1px 6px #000, 0 0 2px #000; }
+.galaxy:not(.is-phone) .galaxy-row:hover { background: rgb(255 255 255 / .03); border-color: rgb(255 255 255 / .05); }
+.galaxy:not(.is-phone) .galaxy-row[aria-current=true] { border-left-width: 1px; border-color: color-mix(in srgb, var(--c) 45%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--c) 14%, rgb(12 12 15 / .7)), rgb(12 12 15 / .55)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 0 24px -10px var(--c), inset 0 1px 0 rgb(255 255 255 / .05); }
+.galaxy:not(.is-phone) .galaxy-row::before { left: 10px; width: 7px; height: 7px; margin-top: -3.5px; opacity: .9; box-shadow: 0 0 0 3px rgb(5 5 7 / .9), 0 0 8px var(--c); }
 .galaxy.is-wide .galaxy-list { right: 412px; }
 .galaxy-list-head { display: flex; align-items: center; gap: 9px; padding: 14px 14px 11px 16px; border-bottom: 1px solid rgb(255 255 255 / .06); }
 .galaxy-list-name { color: #f4f4f5; font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -75,18 +111,28 @@
 .galaxy-row:focus-visible { outline: 1px solid var(--c); outline-offset: -2px; }
 .galaxy-list-note { margin: 0; padding: 12px 16px; font-size: 11.5px; color: #71717a; }
 
-.galaxy-detail { width: 380px; padding: 16px 20px 20px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .1) transparent; }
+.galaxy-detail { width: 380px; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .1) transparent; }
+.galaxy-detail-body { padding: 14px 20px 22px; }
+.galaxy-detail-folder { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 7px; color: #f4f4f5; font-size: 13.5px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.galaxy-detail-meta { display: flex; gap: 12px; margin: 8px 0 0; font: 11px var(--font-mono); color: #8b8d98; }
+.galaxy-content { margin-top: 2px; }
+.galaxy-content .markdown-preview { overflow: visible; padding: 0; flex: none; font-size: 13px; line-height: 1.75;
+  --text-normal: #c9c9d1; --text-muted: #a1a1aa; --text-faint: #71717a; --text-accent: color-mix(in srgb, var(--c) 75%, #fff); --interactive-accent: var(--c);
+  --bg-secondary: rgb(255 255 255 / .04); --bg-modifier-border: rgb(255 255 255 / .08); --h1-size: 1.25em; --h2-size: 1.12em; --h3-size: 1.04em; --h4-size: 1em; --p-spacing: .7em; color: var(--text-normal); }
+.galaxy-content .markdown-preview .preview-inner { max-width: none; }
+.galaxy-content .markdown-preview :is(h1, h2, h3, h4) { color: color-mix(in srgb, var(--c) 70%, #fff); margin: 1.1em 0 .45em; }
+.galaxy-content .markdown-preview a { color: var(--text-accent); }
 .galaxy:not(.is-wide) .galaxy-detail { width: 330px; }
 .galaxy-detail:focus { outline: none; }
-.galaxy-detail-head { display: flex; align-items: center; justify-content: space-between; }
+.galaxy-detail-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 9px; padding: 12px 12px 12px 16px; border-bottom: 1px solid rgb(255 255 255 / .06); background: rgb(12 12 15 / .82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .galaxy-kicker { margin: 0; color: #8b8d98; font: 500 10px/1.4 var(--font-ui); letter-spacing: .2em; text-transform: uppercase; }
 h4.galaxy-kicker { margin: 18px 0 8px; }
 .galaxy-detail h3 { margin: 10px 0 4px; color: #fafafa; font: 600 18px/1.35 'Mona Sans', var(--font-ui); letter-spacing: -.01em; overflow-wrap: anywhere; }
 .galaxy-detail-path { margin: 0; font: 11px/1.5 var(--font-mono); color: #71717a; overflow-wrap: anywhere; }
-.galaxy-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0 14px; }
+.galaxy-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 14px; }
 .galaxy-tiles > div { padding: 10px 12px; border-radius: 10px; border: 1px solid rgb(255 255 255 / .07); background: rgb(255 255 255 / .02); }
-.galaxy-tiles b { display: block; color: #f4f4f5; font: 600 17px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
-.galaxy-tiles span { display: block; margin-top: 4px; color: #71717a; font-size: 9.5px; letter-spacing: .14em; }
+.galaxy-tiles b { display: block; color: #f4f4f5; font: 600 18px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.galaxy-tiles span { display: block; margin-top: 4px; color: #71717a; font-size: 9.5px; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .galaxy-open { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 9px 12px; border-radius: 10px; cursor: pointer; color: #fafafa; font-size: 13px;
   border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--c) 14%, transparent); transition: background var(--dur-micro) ease-out, box-shadow var(--dur-std) ease-out; }
 .galaxy-open:hover { background: color-mix(in srgb, var(--c) 24%, transparent); box-shadow: 0 0 26px -8px var(--c); }
@@ -105,6 +151,10 @@ h4.galaxy-kicker { margin: 18px 0 8px; }
 .galaxy-search { position: absolute; z-index: 14; bottom: 16px; left: calc((100% - var(--panel-w)) / 2); transform: translateX(-50%); width: min(480px, calc(100% - var(--panel-w) - 220px)); min-width: 220px; display: flex; align-items: center; gap: 9px; padding: 9px 15px; border-radius: 999px; color: #71717a; }
 .galaxy-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: #e4e4e7; font: 13px var(--font-ui); }
 .galaxy-search input::placeholder { color: #71717a; }
+.galaxy-search-stats { display: flex; align-items: baseline; gap: 5px; padding-right: 10px; margin-right: 2px; border-right: 1px solid rgb(255 255 255 / .08); font: 11px var(--font-mono); color: #d4d4d8; white-space: nowrap; }
+.galaxy-search-stats b { color: #52525b; font-weight: 500; margin-left: 4px; }
+.galaxy-search-stats b:first-child { margin-left: 0; }
+.galaxy-kbd { padding: 2px 6px; border: 1px solid rgb(255 255 255 / .12); border-radius: 5px; font: 10px var(--font-mono); color: #8b8d98; background: rgb(255 255 255 / .03); white-space: nowrap; }
 .galaxy-search:focus-within { border-color: rgb(242 196 109 / .35); }
 .galaxy-results { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); max-height: 320px; overflow-y: auto; padding: 6px; border-radius: 14px; }
 .galaxy-results button { display: flex; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: #e4e4e7; text-align: left; cursor: pointer; font-size: 13px; }
@@ -119,6 +169,7 @@ h4.galaxy-kicker { margin: 18px 0 8px; }
 /* Phone: compact chips round the core, the open folder and the note slide up as sheets. */
 .galaxy.is-phone .galaxy-brand { top: 12px; left: 12px; }
 .galaxy.is-phone .galaxy-stats, .galaxy.is-branch .galaxy-stats { display: none; }
+@media (max-width: 1180px) { .galaxy-telemetry { display: none; } }
 .galaxy.is-phone .galaxy-search { left: 12px; right: 12px; bottom: 14px; width: auto; min-width: 0; transform: none; }
 .galaxy.is-phone :is(.galaxy-list, .galaxy-detail) { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: var(--sheet-h); border-radius: 18px 18px 0 0; animation-name: galaxy-sheet; }
 .galaxy.is-phone .galaxy-card.compact { padding: 6px 10px; }
@@ -134,5 +185,5 @@ h4.galaxy-kicker { margin: 18px 0 8px; }
 .galaxy.is-branch .galaxy-card.on { animation: galaxy-card-breathe 2.4s ease-in-out infinite; }
 @keyframes galaxy-card-breathe { 50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent), 0 0 46px -6px color-mix(in srgb, var(--c) 70%, transparent), inset 0 1px 0 rgb(255 255 255 / .08); } }
 @media (prefers-reduced-motion: reduce) {
-  .galaxy-row, .galaxy.is-branch .galaxy-card.on { animation: none; }
+  .galaxy-row, .galaxy.is-branch .galaxy-card.on, .galaxy-telemetry i, .galaxy-legend { animation: none; }
 }

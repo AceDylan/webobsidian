@@ -5,10 +5,11 @@
  * Reduced motion → still frames redrawn only on change; hidden tab → nothing drawn.
  *
  * The core is a star (plasma body, accretion disk in front of and behind it, lensed far side,
- * corona streamers, jets, heartbeat shockwave); each folder is a bioluminescent jellyfish fed by
- * an energy conduit that now and then fires a surge at it.
+ * corona streamers, light streaks, jets, heartbeat shockwave); each folder is a planet lit by it
+ * (galaxyPlanets.ts), fed by an energy conduit that now and then fires a surge at it.
  */
 import { arcControls, cubicAt, galaxyScene, branchScene, type Galaxy, type Point, type Scene } from './galaxyModel';
+import { drawPlanet, planetFor, planetScale, type Planet } from './galaxyPlanets';
 
 const TAU = Math.PI * 2;
 const GOLD = '#f2c46d';
@@ -90,12 +91,6 @@ function plasma(): HTMLCanvasElement {
   return (plasmaTex = c);
 }
 
-/** Bell contraction 0..1: a quick squeeze, then a slow relax — the rhythm of a swimming medusa. */
-function squeeze(p: number) {
-  p = frac(p);
-  return p < 0.28 ? Math.sin((p / 0.28) * Math.PI / 2) : Math.cos(((p - 0.28) / 0.72) * Math.PI / 2) ** 2;
-}
-
 /** A point on the accretion disk (radius `e` in body radii, angle `a`) relative to the star's centre. */
 function onDisk(e: number, a: number, R: number, out: Point): Point {
   const x = Math.cos(a) * e * R, y = Math.sin(a) * e * R * FLAT;
@@ -108,21 +103,23 @@ export interface GalaxyHost {
   cards: Map<string, HTMLElement>;
   /** Visible note rows of the open folder: fibre targets. */
   rows: () => { id: string; el: HTMLElement }[];
-  /** The note list box: fibres end at its left edge. */
+  /** The note list box: rows outside it are not drawn to. */
   list: () => HTMLElement | null;
   onHub: (key: string) => void;
+  /** Receives the measured frame rate once a second (telemetry readout). */
+  onFps?: (fps: number) => void;
 }
 export interface GalaxyState {
   mode: 'galaxy' | 'branch';
   sel: string | null;
   active: string | null;
-  panelW: number; // width taken by panels on the right (branch, desktop)
+  panelW: number; // width taken by panels on the right (branch panels, or the legend in the overview)
   sheetH: number; // height taken by the bottom sheet (branch, phone)
 }
 
 interface Anim { x: number; y: number; s: number; a: number }
 interface Hub extends Anim {
-  key: string; color: string; count: number; phase: number; bend: number;
+  key: string; color: string; count: number; phase: number; bend: number; planet: Planet; size: number;
   surge: number; // progress of an energy surge running core → hub; -1 = none
   next: number; // scene time of the next surge
   flare: number; // 1 when a surge lands, fades out
@@ -134,6 +131,8 @@ export class GalaxyEngine {
   private w = 1; private h = 1; private dpr = 1;
   private phone = false;
   private still = false;
+  private paused = false;
+  private fpsN = 0; private fpsT = 0; private fpsLast = 0;
   private frame = 0; private last = 0; private t = 0;
   private dirty = true;
   private hubs: Hub[] = [];
@@ -197,6 +196,7 @@ export class GalaxyEngine {
       const prev = old.get(f.key);
       return {
         key: f.key, color: f.color, count: f.notes.length, phase: i * 1.37, bend: (i % 2 ? 1 : -1) * 0.1,
+        planet: planetFor(f.key, f.color, f.notes.length, i), size: planetScale(f.notes.length),
         x: prev?.x ?? 0, y: prev?.y ?? 0, s: prev?.s ?? 0.2, a: prev?.a ?? 0,
         surge: -1, next: this.t + 1.5 + r() * 6, flare: 0,
       };
@@ -242,7 +242,7 @@ export class GalaxyEngine {
     const idx = sel === null ? -1 : this.hubs.findIndex(h => h.key === sel);
     this.target = mode === 'branch' && idx >= 0
       ? (this.phone ? branchScene(n, idx, this.w, this.h - sheetH, true) : branchScene(n, idx, this.w - panelW, this.h, false))
-      : galaxyScene(n, this.w, this.h, this.phone);
+      : galaxyScene(n, this.w - panelW, this.h, this.phone); // panelW = the legend in the overview
     const warping = this.warp >= 0;
     if ((this.first || this.still) && !warping) this.snap();
     // Under the boot title card the warp waits for its reveal (CinematicLayer fires wo-fx-reveal).
@@ -294,18 +294,24 @@ export class GalaxyEngine {
     if (document.hidden) return;
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0;
     this.last = now;
-    if (!this.still) this.t += dt;
+    if (!this.still && !this.paused) this.t += dt;
+    if (this.host.onFps) {
+      this.fpsN++; this.fpsT += now - (this.fpsLast || now); this.fpsLast = now;
+      if (this.fpsT >= 1000) { this.host.onFps(Math.round((this.fpsN * 1000) / this.fpsT)); this.fpsN = 0; this.fpsT = 0; }
+    }
     const moving = this.step(dt);
     this.draw();
     this.placeCards();
     this.dirty = false;
-    // Reduced motion: one frame per change (the view calls redraw() when the list scrolls).
-    if (!this.still || moving) this.frame = requestAnimationFrame(this.loop);
+    // Reduced motion / paused: one frame per change (the view calls redraw() when the list scrolls).
+    if (!(this.still || this.paused) || moving) this.frame = requestAnimationFrame(this.loop);
+    else this.fpsLast = 0;
   };
 
   private step(dt: number): boolean {
     const T = this.target;
     if (!T) return false;
+    if (this.paused && !this.still) dt = Math.min(dt, 0.05);
     if (this.still) {
       this.snap(); this.warp = -1; this.shocks = [];
       for (const h of this.hubs) { h.surge = -1; h.flare = 0; }
@@ -327,8 +333,8 @@ export class GalaxyEngine {
     };
     ease(this.core, T.core);
     this.hubs.forEach((h, i) => { if (this.warp < 0 || this.warp > 0.18 + i * 0.055) ease(h, T.hubs[i]); });
-    // Energy surges: every few seconds a conduit fires; the jellyfish flares when it lands.
-    for (const h of this.hubs) {
+    // Energy surges: every few seconds a conduit fires; the planet flares when it lands.
+    if (!this.paused) for (const h of this.hubs) {
       h.flare = Math.max(0, h.flare - dt * 1.4);
       if (h.surge >= 0) {
         h.surge += dt / 0.95;
@@ -411,7 +417,7 @@ export class GalaxyEngine {
 
     this.drawStarBody();
     this.drawStarFront();
-    for (const hub of this.hubs) if (hub.a > 0.02) this.drawJelly(hub);
+    for (const hub of this.hubs) if (hub.a > 0.02) this.drawPlanetHub(hub);
     if (branch && !this.phone) this.drawFibres();
     if (this.shocks.length) this.drawShocks();
     ctx.globalAlpha = 1;
@@ -448,6 +454,24 @@ export class GalaxyEngine {
     sprite(ctx, glow('#ff9a3c'), c.x, c.y, R * 9 * breath, 0.22);
     sprite(ctx, glow('#ffd28a'), c.x, c.y, R * 5.2 * breath, 0.42);
     sprite(ctx, glow('#9b7bff'), c.x + R * 0.8, c.y - R * 0.5, R * 7, 0.08);
+    sprite(ctx, glow('#c9cad8'), c.x, c.y, R * 14, 0.1);
+
+    // light streaks racing out of the core across the whole field, accelerating as they go
+    ctx.lineCap = 'round';
+    const ns = this.phone ? 28 : S.streaks.length, reach = Math.hypot(this.w, this.h) * 0.62;
+    for (let i = 0; i < ns; i++) {
+      const s = S.streaks[i], d = frac(t * s.sp + s.off), a = Math.sin(d * Math.PI) ** 1.5;
+      if (a < 0.03) continue;
+      const r1 = R * 1.6 + d * d * reach, r0 = Math.max(R * 1.3, r1 - (R * 0.6 + d * reach * 0.22) * s.len);
+      const ux = Math.cos(s.ang), uy = Math.sin(s.ang);
+      const x0 = c.x + ux * r0, y0 = c.y + uy * r0, x1 = c.x + ux * r1, y1 = c.y + uy * r1;
+      const g = ctx.createLinearGradient(x0, y0, x1, y1);
+      g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, s.warm ? `rgba(255,226,178,${(0.55 * a).toFixed(3)})` : `rgba(235,240,255,${(0.5 * a).toFixed(3)})`);
+      ctx.globalAlpha = 1; ctx.strokeStyle = g; ctx.lineWidth = s.w;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      sprite(ctx, glow('#ffffff', true), x1, y1, 4 + s.w * 2, a * 0.8);
+    }
+    ctx.lineCap = 'butt';
 
     // corona streamers drifting outwards
     ctx.lineWidth = 0.8;
@@ -696,119 +720,32 @@ export class GalaxyEngine {
     ctx.globalAlpha = 1;
   }
 
-  /** The bell's vertical offset: a gentle drift plus the push of each contraction (cards ride along). */
-  private bob(h: Hub) {
-    const R = (this.target?.hubR ?? 20) * h.s;
-    return Math.sin(this.t * 0.9 + h.phase) * 2.5 - squeeze(this.t * 0.42 + h.phase - 0.08) * R * 0.08;
+  /** A planet's gentle drift (cards ride along). */
+  private bob(h: Hub) { return Math.sin(this.t * 0.6 + h.phase) * 2.5; }
+
+  /** Planet radius on screen: scene hub size × the folder's size × selection. */
+  private planetR(h: Hub) {
+    const lit = this.hover === h.key || this.state.sel === h.key;
+    return (this.target?.hubR ?? 20) * h.s * h.size * (lit ? 1.1 : 1);
   }
 
-  /** A bioluminescent jellyfish: translucent pulsing bell, turning meridians, glowing organs, rim lights, waving tentacles. */
-  private drawJelly(h: Hub) {
-    const { ctx, t } = this;
+  /** A folder planet, lit by the star, with a lock-on reticle when open. */
+  private drawPlanetHub(h: Hub) {
+    const { ctx, t } = this, c = this.core;
     const lit = this.hover === h.key || this.state.sel === h.key;
-    const R = (this.target?.hubR ?? 20) * h.s * (lit ? 1.08 : 1);
-    if (R < 2) return;
-    const sq = squeeze(t * 0.42 + h.phase), fl = h.flare;
-    const bw = R * (1.04 - 0.16 * sq), bh = R * (0.88 + 0.12 * sq);
-    const x = h.x, rim = h.y + this.bob(h) + R * 0.3, top = rim - bh;
-    const A = h.a * (lit ? 1 : 0.85), col = h.color, hot = glow(col, true);
-    const rho = (s: number) => bw * Math.sin(s * Math.PI / 2) ** 0.72;
-    const yAt = (s: number) => top + bh * (1 - Math.cos(s * Math.PI / 2));
-
-    sprite(ctx, glow(col), x, rim - bh * 0.4, R * (4.4 + fl * 2.4), A * (0.3 + (lit ? 0.22 : 0) + fl * 0.45));
-
-    // tentacles: a travelling wave, splaying out as the bell squeezes
-    const tg = ctx.createLinearGradient(0, rim, 0, rim + R * 2.8);
-    tg.addColorStop(0, rgba(col, 0.75)); tg.addColorStop(1, rgba(col, 0));
-    ctx.strokeStyle = tg;
-    const nt = this.phone ? 6 : 12;
-    for (let i = 0; i < nt; i++) {
-      const th = ((i + 0.5) / nt) * TAU + h.phase, front = Math.sin(th) > 0;
-      const bx = x + Math.cos(th) * bw * 0.9, by = rim + Math.sin(th) * bw * 0.2;
-      const L = R * (1.9 + 0.5 * Math.sin(i * 1.7 + h.phase)) * (lit ? 1.15 : 1);
-      ctx.globalAlpha = A * (front ? 1 : 0.5);
-      ctx.lineWidth = front ? 0.8 : 0.55;
-      ctx.beginPath(); ctx.moveTo(bx, by);
-      for (let k = 1; k <= 12; k++) {
-        const f = k / 12;
-        ctx.lineTo(bx + (bx - x) * f * (0.5 * sq - 0.25) + Math.sin(t * 2.3 - f * 5.5 + i * 1.3 + h.phase) * f * R * 0.24, by + f * L * (1 - 0.12 * sq));
-      }
-      ctx.stroke();
-    }
-    // oral arms: frilled ribbons from the centre
-    for (let k = 0; k < (this.phone ? 2 : 4); k++) {
-      const ox = (k - (this.phone ? 0.5 : 1.5)) * R * 0.14, L = R * (1.5 + 0.2 * (k % 2));
-      for (const [wd, amp, ph, al] of [[1.6, 0.26, 0, 0.75], [0.7, 0.16, 1.7, 0.5]] as const) {
-        ctx.globalAlpha = A * al; ctx.lineWidth = wd;
-        ctx.beginPath(); ctx.moveTo(x + ox, rim - bh * 0.1);
-        for (let s = 1; s <= 12; s++) {
-          const f = s / 12;
-          ctx.lineTo(x + ox * (1 + f) + Math.sin(t * 1.8 - f * 5 + k * 2 + ph) * f * R * amp, rim - bh * 0.1 + f * L);
-        }
-        ctx.stroke();
-      }
-    }
-
-    // bell: dome silhouette with scalloped rim, translucent fill
-    ctx.beginPath();
-    for (let k = 0; k <= 10; k++) { const s = 1 - k / 10; k ? ctx.lineTo(x - rho(s), yAt(s)) : ctx.moveTo(x - rho(s), yAt(s)); }
-    for (let k = 1; k <= 10; k++) { const s = k / 10; ctx.lineTo(x + rho(s), yAt(s)); }
-    const lappets = 8;
-    for (let k = 1; k <= lappets; k++) {
-      const a0 = ((k - 1) / lappets) * Math.PI, a1 = (k / lappets) * Math.PI, am = (a0 + a1) / 2;
-      ctx.quadraticCurveTo(x + Math.cos(am) * bw * 0.98, rim + Math.sin(am) * bw * 0.22 + R * 0.12, x + Math.cos(a1) * bw, rim + Math.sin(a1) * bw * 0.22);
-    }
-    ctx.closePath();
-    const fill = ctx.createRadialGradient(x, top + bh * 0.4, 0, x, top + bh * 0.4, bw * 1.25);
-    fill.addColorStop(0, rgba(col, 0.42)); fill.addColorStop(0.55, rgba(col, 0.1)); fill.addColorStop(0.88, rgba(col, 0.3)); fill.addColorStop(1, rgba(col, 0.05));
-    ctx.globalAlpha = A * (1 + fl * 0.5); ctx.fillStyle = fill; ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = rgba(col, 0.12 + fl * 0.15); ctx.stroke();
-    ctx.lineWidth = 1; ctx.strokeStyle = rgba(col, 0.9); ctx.stroke();
-
-    // turning meridians and two parallels give it volume
-    ctx.lineWidth = 0.6;
-    const nm = this.phone ? 5 : 8;
-    for (let m = 0; m < nm; m++) {
-      const u = (m / nm) * TAU + t * 0.35 + h.phase, cu = Math.cos(u), su = Math.sin(u);
-      ctx.globalAlpha = A * (su > 0 ? 0.45 : 0.13);
-      ctx.strokeStyle = col;
-      ctx.beginPath();
-      for (let k = 0; k <= 8; k++) { const s = k / 8, r = rho(s), px = x + r * cu, py = yAt(s) + r * 0.22 * su; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
-      ctx.stroke();
-    }
-    ctx.globalAlpha = A * 0.25;
-    for (const s of [0.5, 0.78]) { ctx.beginPath(); ctx.ellipse(x, yAt(s), rho(s), rho(s) * 0.22, 0, 0, TAU); ctx.stroke(); }
-
-    // organs: four glowing gonads turning with the bell, a bright mouth, a glassy sheen
-    for (let k = 0; k < 4; k++) {
-      const u = k * Math.PI / 2 + t * 0.35 + h.phase + Math.PI / 4, r = rho(0.62) * 0.45;
-      sprite(ctx, glow(col), x + Math.cos(u) * r, yAt(0.62) + Math.sin(u) * r * 0.22, R * 0.62, A * (Math.sin(u) > 0 ? 0.7 : 0.35) * (0.8 + 0.4 * sq));
-    }
-    sprite(ctx, hot, x, rim - bh * 0.18, R * (0.7 + 0.25 * sq), A * (0.55 + 0.3 * sq + fl * 0.4));
-    sprite(ctx, glow('#ffffff'), x - bw * 0.35, top + bh * 0.3, R * 0.55, A * 0.22);
-
-    // rim lights: a ripple of light chasing round the margin
-    const nb = this.phone ? 8 : 14;
-    for (let i = 0; i < nb; i++) {
-      const th = (i / nb) * TAU, chase = Math.max(0, Math.sin(th - t * 3.2 + h.phase)) ** 6;
-      const b = Math.min(1, 0.22 + 0.78 * chase + fl);
-      sprite(ctx, hot, x + Math.cos(th) * bw, rim + Math.sin(th) * bw * 0.22, 3.5 + 4 * chase + fl * 3, A * b * (Math.sin(th) > 0 ? 1 : 0.5));
-    }
-    // luminous motes drifting down from the tentacles
-    for (let k = 0; k < (this.phone ? 2 : 4); k++) {
-      const life = frac(t * 0.2 + k / 4 + h.phase);
-      sprite(ctx, hot, x + Math.sin(k * 2.3 + h.phase) * bw * 0.7 + Math.sin(t * 1.3 + k) * 3, rim + R * (1 + life * 2.4), 4, A * Math.sin(life * Math.PI) * 0.7);
-    }
-    // lock-on brackets around the open folder
-    if (this.state.sel === h.key) {
-      const cy = rim - bh * 0.3, rr = R * 1.9 + Math.sin(t * 3) * 1.5;
-      ctx.globalAlpha = A * 0.75; ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+    const R = this.planetR(h), x = h.x, y = h.y + this.bob(h);
+    const dx = c.x - x, dy = c.y - y, d = Math.hypot(dx, dy) || 1;
+    drawPlanet(ctx, h.planet, { x, y, R, alpha: h.a * (lit ? 1 : 0.92), lx: dx / d, ly: dy / d, t, lit, flare: h.flare, phone: this.phone, glow });
+    if (this.state.sel === h.key || this.hover === h.key) {
+      const sel = this.state.sel === h.key, rr = R * (h.planet.ringed ? 2.5 : 1.75) + Math.sin(t * 3) * 1.5;
+      ctx.globalAlpha = h.a * (sel ? 0.8 : 0.45); ctx.strokeStyle = h.color; ctx.lineWidth = 1.2;
       for (let k = 0; k < 4; k++) {
-        const a = (k / 4) * TAU + Math.PI / 4 + t * 0.5;
-        ctx.beginPath(); ctx.arc(x, cy, rr, a - 0.28, a + 0.28); ctx.stroke();
+        const a = (k / 4) * TAU + Math.PI / 4 + t * (sel ? 0.5 : 0.25);
+        ctx.beginPath(); ctx.arc(x, y, rr, a - 0.26, a + 0.26); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * (rr + 3), y + Math.sin(a) * (rr + 3)); ctx.lineTo(x + Math.cos(a) * (rr + 9), y + Math.sin(a) * (rr + 9)); ctx.stroke();
       }
+      ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
   }
 
   /** Warp-in: star streaks racing out of the core, a core flash and one expanding ring. */
@@ -893,7 +830,7 @@ export class GalaxyEngine {
       const prog = clamp01((grow - 0.12 - i * stagger) / 0.45);
       if (prog <= 0) return;
       const u = 1 - (1 - prog) ** 3;
-      const e = { x: ex, y: r.top + r.height / 2 - origin.top };
+      const e = { x: Math.max(ex, r.left - origin.left + 13), y: r.top + r.height / 2 - origin.top }; // the row's node dot
       const mid = (e.x - j.x) * 0.5;
       const c1 = { x: j.x + mid, y: j.y }, c2 = { x: e.x - mid, y: e.y };
       const on = id === this.state.active, hov = id === this.hoverRow;
@@ -941,10 +878,10 @@ export class GalaxyEngine {
     for (const h of this.hubs) {
       const el = this.host.cards.get(h.key);
       if (!el) continue;
-      const y = h.y + this.bob(h);
+      const y = h.y + this.bob(h), R = this.planetR(h), ring = h.planet.ringed ? 1.6 : 1;
       const tf = side === 'below'
-        ? `translate3d(${h.x.toFixed(1)}px,${(y + hubR * h.s * 1.55).toFixed(1)}px,0) translateX(-50%)`
-        : `translate3d(${(h.x + hubR * h.s * 1.4).toFixed(1)}px,${y.toFixed(1)}px,0) translateY(-50%)`;
+        ? `translate3d(${h.x.toFixed(1)}px,${(y + Math.max(R * 1.35, hubR * h.s * 1.1) + 6).toFixed(1)}px,0) translateX(-50%)`
+        : `translate3d(${(h.x + Math.max(R * 1.25 * ring, hubR * h.s * 1.3) + 6).toFixed(1)}px,${y.toFixed(1)}px,0) translateY(-50%)`;
       if (el.style.transform !== tf) el.style.transform = tf;
       const op = Math.max(0, Math.min(1, h.a)).toFixed(2);
       if (el.style.opacity !== op) el.style.opacity = op;
@@ -956,15 +893,20 @@ export class GalaxyEngine {
   /* --------------------------------------------------------------- input */
   private hubAt(x: number, y: number): string | null {
     let best: string | null = null, bd = Infinity;
-    const R = (this.target?.hubR ?? 20) * 1.7;
     for (const h of this.hubs) {
       if (h.a < 0.3) continue;
       const d = Math.hypot(h.x - x, h.y - y);
-      if (d < R * h.s && d < bd) { bd = d; best = h.key; }
+      if (d < Math.max(14, this.planetR(h) * 1.4) && d < bd) { bd = d; best = h.key; }
     }
     return best;
   }
   redraw() { this.wake(); }
+  /** Freeze the scene's clock (easing still finishes); one frame per change while paused. */
+  setPaused(on: boolean) {
+    if (this.paused === on) return;
+    this.paused = on;
+    this.wake();
+  }
   setHover(key: string | null) {
     if (this.hover === key) return;
     this.hover = key;
@@ -1016,7 +958,8 @@ function makeStar() {
     const k = i / 8;
     return { e: 1.4 + k * 1.4, w: i % 3 ? 0.5 : 0.9, a: 0.26 - k * 0.16, color: TINTS[Math.min(4, Math.floor(k * 4.99))] };
   });
+  const streaks = Array.from({ length: 72 }, () => ({ ang: r() * TAU, off: r(), sp: 0.07 + r() * 0.13, len: 0.4 + r() * 0.9, w: 0.5 + r() * 0.9, warm: r() < 0.35 }));
   const rays = Array.from({ length: 64 }, () => ({ ang: r() * TAU, off: r(), sp: 0.06 + r() * 0.12, len: 0.2 + r() * 0.6, warm: r() < 0.7 }));
   const loops = Array.from({ length: 6 }, (_, i) => ({ ang: (i / 6) * TAU + r(), span: 0.25 + r() * 0.25, lift: 0.3 + r() * 0.5, sp: 0.08 + r() * 0.1, ph: r() }));
-  return { disk, rings, rays, loops };
+  return { disk, rings, rays, loops, streaks };
 }

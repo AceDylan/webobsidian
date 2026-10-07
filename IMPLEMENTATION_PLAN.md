@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-10-07 (Phase 34 — Galaxy star core & jellyfish, PRD 2.3)
+Cập nhật lần cuối: 2026-10-07 (Phase 35 — Galaxy planets & Neural-style chrome, PRD 2.4)
 
 ---
 
@@ -482,6 +482,7 @@ Cập nhật lần cuối: 2026-10-07 (Phase 34 — Galaxy star core & jellyfish
       origin Hub, kẹp 0–4000) ⇒ thanh lấy giá trị lớn hơn. Test `web/test/hub-keyboard.test.ts`.
 
 ### Nhật ký tiến độ
+- 2026-10-07 (Phase 35): 星图 — sứa đổi thành hành tinh thủ tục được sao chiếu sáng (vành, mặt trăng), tia sáng toả từ lõi, chú giải, đo từ xa FPS, tạm dừng/đặt lại, Ctrl/⌘K, danh sách note nổi, thẻ note hiển thị toàn văn. Typecheck sạch, test web 44/44 (mới: galaxy-planets), Playwright 56/56 + 51/51 + 12/12.
 - 2026-10-07 (Phase 34): 星图 vẽ lại — lõi sao (plasma, đĩa bồi tụ trước/sau, thấu kính, tia, phản lực, sóng nhịp tim), sứa phát quang (chuông co bóp, xúc tu sóng, đèn viền), ống năng lượng có xung, sợi nhánh mọc dần; bố cục nhánh bám sát panel trên màn rộng. Typecheck sạch, test web pass, Playwright 56/56 + 51/51.
 - 2026-10-06 (Phase 31): tab graph thêm chế độ 星图 (Canvas 2D tự viết: lõi lưới, sứa theo thư mục gốc, cung hạt sáng, danh sách + sợi quạt, thẻ chi tiết; điện thoại dùng chip hai bên + bottom sheet). 关系图 giữ nguyên. Typecheck sạch, test web 32/32, build web OK, Playwright 56/56 trên vault thật (desktop/mid/phone/reduced-motion, chặn mọi request ghi).
 - 2026-10-05 (Phase 30, M30.5): lớp sci-fi cho graph (sao, xung sáng, vòng HUD, khung ngắm) + viền neon theme Halo. Typecheck sạch, test web 25/25, Playwright 56/56 (desktop/mobile × dark/light × reduced/normal).
@@ -1404,3 +1405,11 @@ Cập nhật lần cuối: 2026-10-07 (Phase 34 — Galaxy star core & jellyfish
 - Local validation: `npm run typecheck` passed; web tests pass (galaxy-model 7/7 incl. new wide/narrow branch layout case); `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed. Built-app Playwright against the production API with every write intercepted: galaxy suite 56/56 (desktop 1440, mid 1100, phone 390, reduced motion), cinematic suite 51/51. Headless software-rendered frame time unchanged vs. production (desktop median 33 ms, phone 16.7 ms). 1920×1080: card → list gap ~370 px → ~200 px.
 - Production: implementation `ffa1bf7`, Docker Image CI run `37625451963` succeeded; compose pulled/recreated only WebObsidian (running image `sha256:a8cb94e4…`, bundle contains the new disk band), container healthy, internal `/healthz` HTTP 200, public HTTPS still behind the auth gate (401 without session). Same browser suites against production with writes intercepted: galaxy 56/56, cinematic 51/51, no runtime errors.
 - Rollback: `docker tag webobsidian:rollback-pre-starcore-20261007 dylanha009/webobsidian:latest && cd /opt/webobsidian && docker compose up -d --no-deps --pull never webobsidian` (pull_policy is always). No settings or data changed.
+
+## Phase 35 — Galaxy planets & Neural-style chrome (PRD 2.4, theo yêu cầu người dùng)
+- [x] M35.1 `web/src/lib/galaxyPlanets.ts`: procedural planet textures (6 kinds), star-lit shading, atmosphere, rings, moons; engine swaps jellyfish for planets, adds light streaks, pause and FPS hooks.
+- [x] M35.2 `GalaxyView`: legend (reserved width), telemetry, pause/reset, search stats + ⌘K, card planet glyph, floating note rows with fibre nodes, full-note card via `Preview`.
+- [x] M35.3 Typecheck/tests/build; browser checks desktop/mid/phone/reduced motion + new-chrome checks; CI deploy; rollback.
+
+### 2026-10-07 — Phase 35
+- Local validation: `npm run typecheck` passed; web tests 44/44 (new `galaxy-planets.test.ts`); `NODE_OPTIONS=--max-old-space-size=1536 npm run build` passed. Built-app Playwright against the production API with writes intercepted: galaxy suite 56/56, cinematic suite 51/51, new-chrome suite 12/12 (legend lists all folders and covers none, live FPS, ⌘K focus, pause, legend opens folder, reset, full-note render in light text, no runtime errors). Headless software-rendered frame time unchanged (desktop median 33 ms, phone 16.7 ms).
